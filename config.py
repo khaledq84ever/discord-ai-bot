@@ -19,7 +19,7 @@ GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/khaledq84ever/discord-a
 LANDING_URL = os.getenv("LANDING_URL", "https://discordbot-khaledq8s-projects.vercel.app")
 
 # Default model used by a server until /model changes it.
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.0-flash")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.5-flash")  # 2.0-flash free tier was quota-0 in some regions
 
 # Gemini image-generation model (free-tier capable). The old Imagen
 # `ImageGenerationModel` needed a paid Vertex project; this one works on a
