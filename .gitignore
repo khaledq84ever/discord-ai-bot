@@ -1,0 +1,14 @@
+# Secrets — never commit
+.env
+
+# Live database + SQLite WAL files
+*.db
+*.db-wal
+*.db-shm
+bot.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
