@@ -5,116 +5,152 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Bot — أضف بوت الذكاء الاصطناعي لسيرفرك</title>
 <meta name="description" content="بوت ذكاء اصطناعي لديسكورد: GPT و Gemini و Claude + توليد الصور. يتكلم عربي. أضفه بنقرة واحدة.">
-<link rel="icon" type="image/png" href="avatar.png">
 <meta property="og:title" content="AI Bot — بوت ذكاء اصطناعي لديسكورد">
 <meta property="og:description" content="GPT و Gemini و Claude + توليد الصور، يتكلم عربي. أضفه بنقرة واحدة.">
-<meta property="og:image" content="avatar.png">
+<meta property="og:image" content="/family.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/avatar.png">
+<link rel="apple-touch-icon" href="/avatar.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+  *{margin:0;padding:0;box-sizing:border-box}
   :root{
     --red:#e8001c; --navy:#0a0e27; --gold:#d4a843;
-    --blurple:#5865F2; --card:#141a3a; --line:#26305e; --muted:#9aa6d4;
+    --blurple:#5865f2; --blurple-dark:#4452d4;
+    --card:#141a3a; --line:#26305e; --line-soft:#1c2550; --muted:#9aa6d4;
+    --shadow-md:0 14px 34px -12px rgba(0,0,0,.6);
+    --glow:0 16px 44px -8px rgba(88,101,242,.6);
   }
-  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
   body{
-    font-family:'Tajawal','Inter',sans-serif; color:#fff; min-height:100vh;
+    font-family:'Cairo','Inter',system-ui,sans-serif; color:#fff; min-height:100vh;
+    line-height:1.55; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    font-size:16px; overflow-x:hidden;
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(88,101,242,.25), transparent 60%),
-      radial-gradient(900px 500px at 0% 10%, rgba(232,0,28,.18), transparent 55%),
+      radial-gradient(1200px 600px at 82% -12%, rgba(88,101,242,.26), transparent 60%),
+      radial-gradient(900px 520px at -5% 8%, rgba(232,0,28,.18), transparent 55%),
       var(--navy);
-    overflow-x:hidden;
   }
-  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
-  .logo .dot{width:38px;height:38px;border-radius:11px;object-fit:cover;
-    box-shadow:0 4px 14px rgba(232,0,28,.35)}
-  .badge{font-size:13px;color:var(--muted);border:1px solid var(--line);
-    padding:6px 12px;border-radius:999px}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 70px}
 
-  .hero{text-align:center;padding:56px 0 40px}
-  .hero h1{font-size:clamp(36px,6.4vw,64px);font-weight:900;line-height:1.12;
-    letter-spacing:-1px}
+  /* ───── NAV ───── */
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo{display:flex;align-items:center;gap:11px;font-weight:900;font-size:19px;letter-spacing:-.3px;color:#fff;text-decoration:none}
+  .logo img{width:40px;height:40px;border-radius:11px;object-fit:cover;box-shadow:0 6px 18px rgba(88,101,242,.4)}
+  .badge{font-size:13px;color:var(--muted);border:1px solid var(--line);
+    padding:6px 13px;border-radius:999px;font-family:'Inter',sans-serif;font-weight:600}
+
+  /* ───── BUTTONS ───── */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    font-family:inherit;font-weight:800;font-size:16px;text-decoration:none;cursor:pointer;
+    padding:15px 30px;border-radius:15px;min-height:56px;border:none;color:#fff;
+    position:relative;overflow:hidden;
+    transition:transform .18s cubic-bezier(.2,.6,.2,1),box-shadow .25s,background .15s,border-color .15s}
+  .btn:active{transform:translateY(0) scale(.985)}
+  .btn svg{width:22px;height:22px;flex-shrink:0}
+  .btn-primary{background:var(--blurple);box-shadow:var(--shadow-md)}
+  .btn-primary:hover{background:var(--blurple-dark);transform:translateY(-3px);box-shadow:var(--glow)}
+  .btn-primary::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(120deg,transparent 0,rgba(255,255,255,.22) 50%,transparent 100%);
+    transform:translateX(-100%);transition:transform .55s ease}
+  .btn-primary:hover::after{transform:translateX(100%)}
+  .btn-ghost{background:rgba(255,255,255,.04);border:1.5px solid var(--line);font-weight:700}
+  .btn-ghost:hover{border-color:var(--gold);background:rgba(255,255,255,.07);transform:translateY(-3px);box-shadow:var(--shadow-md)}
+  .btn-pulse{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:var(--shadow-md),0 0 0 0 rgba(88,101,242,.55)}
+    50%{box-shadow:var(--shadow-md),0 0 0 14px rgba(88,101,242,0)}}
+
+  /* ───── HERO ───── */
+  .hero{text-align:center;padding:54px 0 38px}
+  .hero-logo{width:108px;height:108px;border-radius:26px;margin:0 auto 22px;display:block;object-fit:cover;
+    box-shadow:0 18px 50px -10px rgba(88,101,242,.55);animation:float 4.5s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .pill-tag{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;
+    background:rgba(88,101,242,.14);color:#aab4ff;border:1px solid rgba(88,101,242,.4);
+    font-family:'Inter',sans-serif;font-weight:800;font-size:13px;margin-bottom:18px;letter-spacing:.3px}
+  .pill-tag .dot{width:7px;height:7px;border-radius:50%;background:#57f287;animation:blink 1.6s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+  .hero h1{font-size:clamp(36px,6vw,68px);font-weight:900;line-height:1.08;letter-spacing:-1.2px;margin-bottom:14px}
   .hero h1 .grad{background:linear-gradient(120deg,var(--gold),var(--red));
     -webkit-background-clip:text;background-clip:text;color:transparent}
-  .hero p{color:var(--muted);font-size:clamp(16px,2.4vw,20px);
-    max-width:640px;margin:18px auto 0;line-height:1.7}
+  .hero p{color:var(--muted);font-size:clamp(16px,2vw,19px);font-weight:600;max-width:650px;margin:0 auto 6px;line-height:1.6}
+  .hero .en{color:#6f7bb0;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;max-width:620px;margin:0 auto}
+  .models{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:9px 16px;border-radius:999px;font-weight:700;font-size:14px;color:#e9ecff;font-family:'Inter',sans-serif}
+  .pill svg{width:16px;height:16px}
+  .pill b{color:var(--gold);font-weight:800}
+  .btnrow{display:flex;gap:13px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .sub{display:block;margin-top:18px;color:var(--muted);font-size:13.5px;font-family:'Inter',sans-serif}
 
-  .btnrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
-  .cta{
-    display:inline-flex;align-items:center;justify-content:center;gap:12px;
-    background:var(--blurple);color:#fff;border:none;cursor:pointer;
-    font-family:inherit;font-weight:900;font-size:19px;
-    padding:18px 34px;border-radius:16px;text-decoration:none;
-    min-height:60px;
-    box-shadow:0 14px 40px rgba(88,101,242,.45);
-    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
-  }
-  .cta:hover{transform:translateY(-3px);box-shadow:0 20px 52px rgba(88,101,242,.6)}
-  .cta:active{transform:translateY(-1px)}
-  .cta svg{width:26px;height:26px}
-  .cta.ghost{background:rgba(255,255,255,.04);color:#fff;
-    border:1px solid var(--line);box-shadow:none;font-weight:800}
-  .cta.ghost:hover{border-color:var(--gold);background:rgba(255,255,255,.07);
-    box-shadow:0 12px 30px rgba(0,0,0,.35)}
-  .sub{display:block;margin-top:16px;color:var(--muted);font-size:14px}
+  /* ───── SECTION HEAD ───── */
+  .head{text-align:center;margin:60px 0 30px}
+  .head h2{font-size:clamp(26px,4vw,40px);font-weight:900;letter-spacing:-.8px;margin-bottom:8px}
+  .head p{color:var(--muted);font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:18px;margin-top:56px}
+  /* ───── FEATURE CARDS ───── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
   .card{background:linear-gradient(180deg,var(--card),#0e1430);
-    border:1px solid var(--line);border-radius:18px;padding:24px;
-    transition:transform .15s ease,border-color .15s ease}
-  .card:hover{transform:translateY(-4px);border-color:var(--gold)}
-  .card .ico{font-size:26px;width:50px;height:50px;border-radius:12px;
-    background:rgba(255,255,255,.05);display:grid;place-items:center;margin-bottom:14px}
-  .card h3{font-size:18px;margin-bottom:8px}
+    border:1px solid var(--line);border-radius:18px;padding:24px 22px;
+    transition:transform .2s cubic-bezier(.2,.6,.2,1),border-color .2s,box-shadow .2s}
+  .card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:var(--shadow-md)}
+  .card .ico{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px}
+  .card .ico svg{width:24px;height:24px}
+  .card .ico.b{background:rgba(88,101,242,.16);color:#aab4ff}
+  .card .ico.g{background:rgba(212,168,67,.16);color:var(--gold)}
+  .card .ico.r{background:rgba(232,0,28,.16);color:#ff6b7e}
+  .card .ico.p{background:rgba(124,58,237,.18);color:#b794f6}
+  .card h3{font-size:18px;font-weight:900;margin-bottom:6px}
   .card p{color:var(--muted);font-size:14px;line-height:1.6}
 
-  .models{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:30px}
-  .pill{border:1px solid var(--line);background:rgba(255,255,255,.03);
-    padding:9px 18px;border-radius:999px;font-weight:600;font-size:14px;color:#e9ecff}
-  .pill b{color:var(--gold)}
-
-  .steps{margin-top:64px;background:rgba(255,255,255,.02);
+  /* ───── STEPS ───── */
+  .steps{margin-top:34px;background:rgba(255,255,255,.025);
     border:1px solid var(--line);border-radius:20px;padding:30px}
-  .steps h2{text-align:center;font-size:24px;margin-bottom:24px}
-  .step{display:flex;gap:16px;align-items:flex-start;padding:12px 0;
-    border-bottom:1px dashed var(--line)}
+  .step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed var(--line-soft)}
   .step:last-child{border-bottom:none}
-  .step .n{flex:0 0 36px;height:36px;border-radius:50%;font-weight:800;
-    background:linear-gradient(135deg,var(--red),var(--gold));display:grid;place-items:center}
-  .step .t b{display:block;margin-bottom:3px}
-  .step .t span{color:var(--muted);font-size:14px}
+  .step .n{flex:0 0 38px;height:38px;border-radius:50%;font-weight:900;color:#fff;
+    background:linear-gradient(135deg,var(--blurple),var(--blurple-dark));display:grid;place-items:center}
+  .step .t b{display:block;margin-bottom:3px;font-size:16px}
+  .step .t span{color:var(--muted);font-size:13.5px}
+  .step .t code{font-family:'Inter',monospace;background:rgba(88,101,242,.18);color:#aab4ff;
+    padding:2px 7px;border-radius:6px;font-weight:800}
 
-  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:50px;line-height:1.9}
+  /* ───── CTA ───── */
+  .cta-box{margin-top:60px;text-align:center;padding:48px 28px;border-radius:24px;
+    background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.12) 0,transparent 50%),
+      linear-gradient(135deg,var(--blurple),var(--blurple-dark));
+    box-shadow:0 28px 60px -16px rgba(88,101,242,.5)}
+  .cta-box h2{font-size:clamp(26px,4.5vw,38px);font-weight:900;letter-spacing:-.8px;margin-bottom:10px}
+  .cta-box p{color:rgba(255,255,255,.9);font-weight:600;font-size:15px;margin-bottom:24px}
+  .cta-box .btn-primary{background:#fff;color:var(--blurple)}
+  .cta-box .btn-primary:hover{background:#f0f1ff}
+
+  /* ───── FOOTER ───── */
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:54px;line-height:1.9;font-family:'Inter',sans-serif}
   footer a{color:var(--gold);text-decoration:none}
   footer a:hover{text-decoration:underline}
-
-  /* pro author credit chip */
-  .credit{display:inline-flex;align-items:center;gap:9px;margin-top:18px;
-    padding:10px 18px;border-radius:999px;font-weight:800;font-size:14px;
-    color:#fff;text-decoration:none;
+  .footer-family{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+  .footer-family img{width:34px;height:34px;border-radius:9px;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:transform .2s}
+  .footer-family img:hover{transform:translateY(-3px) scale(1.07)}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;
+    padding:9px 18px;border-radius:999px;font-weight:800;font-size:13px;color:#fff;text-decoration:none;
     background:linear-gradient(135deg,rgba(29,155,240,.18),rgba(255,255,255,.04));
-    border:1px solid #1d9bf0;
-    box-shadow:0 8px 24px rgba(29,155,240,.25);
-    transition:transform .15s ease, box-shadow .15s ease}
-  .credit:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(29,155,240,.4)}
-  .credit svg{width:18px;height:18px;fill:#1d9bf0}
+    border:1px solid #1d9bf0;box-shadow:0 8px 24px rgba(29,155,240,.25);
+    transition:transform .15s,box-shadow .15s}
+  .credit:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(29,155,240,.4);text-decoration:none}
+  .credit svg{width:15px;height:15px;fill:#1d9bf0}
   .credit b{color:#1d9bf0}
 
-  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-  @media (prefers-reduced-motion:reduce){.hero img{animation:none}}
-
-  /* phone optimization */
+  @media (prefers-reduced-motion:reduce){.hero-logo,.pill-tag .dot,.btn-pulse{animation:none}}
   @media (max-width:560px){
-    .wrap{padding:20px 16px 56px}
-    .hero{padding:36px 0 28px}
+    .wrap{padding:18px 16px 56px}
+    .hero{padding:34px 0 26px}
     .btnrow{flex-direction:column;align-items:stretch}
-    .cta{width:100%;font-size:18px;padding:17px 24px}
-    .grid{grid-template-columns:1fr;gap:14px;margin-top:40px}
-    .steps{padding:22px 18px}
+    .btn{width:100%}
+    .grid{grid-template-columns:1fr}
+    .steps,.cta-box{padding:24px 18px}
     .badge{display:none}
   }
 </style>
@@ -122,84 +158,110 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><img class="dot" src="avatar.png" alt="AI Bot" width="38" height="38"> AI Bot</div>
+    <a href="/" class="logo"><img src="/avatar.png" alt="AI Bot logo"> AI Bot</a>
     <span class="badge">Arabic-first · يتكلم عربي</span>
   </header>
 
+  <!-- ─── HERO ─── -->
   <section class="hero">
-    <img src="avatar.png" alt="AI Bot" width="104" height="104"
-         style="border-radius:26px;margin:0 auto 22px;display:block;
-                box-shadow:0 18px 50px rgba(232,0,28,.45);
-                animation:float 4s ease-in-out infinite">
+    <img class="hero-logo" src="/avatar.png" alt="AI Bot">
+    <div class="pill-tag"><span class="dot"></span> بوت ذكاء اصطناعي لديسكورد</div>
     <h1>بوت <span class="grad">ذكاء اصطناعي</span><br>لسيرفر الديسكورد</h1>
-    <p>تكلّم مع GPT و Gemini و Claude، وولّد الصور — كله داخل سيرفرك. يفهم العربية ويرد بالعربية. أضفه بنقرة واحدة.</p>
+    <p>تكلّم مع GPT و Gemini و Claude، وولّد الصور — كله داخل سيرفرك. يفهم العربية ويرد بها.</p>
+    <p class="en">Chat with GPT, Gemini & Claude, and generate images — right inside your server.</p>
 
     <div class="models">
-      <span class="pill">🟢 <b>GPT-4o</b></span>
-      <span class="pill">🔵 <b>Gemini</b></span>
-      <span class="pill">🟣 <b>Claude</b></span>
-      <span class="pill">🎨 <b>توليد صور</b></span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="#10a37f"><circle cx="12" cy="12" r="9"/></svg> <b>GPT-4o</b></span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="#4285f4"><path d="M12 2l2.5 7L22 11.5 14.5 14 12 22 9.5 14 2 11.5 9.5 9z"/></svg> <b>Gemini</b></span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="#d97757"><circle cx="12" cy="12" r="9"/></svg> <b>Claude</b></span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> <b>توليد صور</b></span>
     </div>
 
-    <div>
-      <div class="btnrow">
-        <a class="cta" id="addBtn" href="#" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19 19 0 0 0 15.6 3l-.3.5a14 14 0 0 1 3.9 1.9 13 13 0 0 0-11.2 0A14 14 0 0 1 12 3.5L11.6 3A19 19 0 0 0 7 4.4 19.8 19.8 0 0 0 3.5 17a19 19 0 0 0 5.8 2.9l.6-1.3a12 12 0 0 1-2-1l.5-.4a13.4 13.4 0 0 0 11.4 0l.5.4c-.6.4-1.3.7-2 1l.6 1.3A19 19 0 0 0 24.5 17 19.8 19.8 0 0 0 20.3 4.4ZM9.7 14.3c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.7 2-1.7 2Zm5.6 0c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/></svg>
-          أضف إلى ديسكورد · Add to Discord
-        </a>
-        <a class="cta ghost" href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 8.8 21.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.7.3-1.1.6-1.4-2.2-.3-4.5-1.1-4.5-5a4 4 0 0 1 1-2.7c-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7a4 4 0 0 1 1 2.7c0 3.9-2.3 4.7-4.5 5 .4.3.7.9.7 1.8v2.6c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>
-          GitHub · المصدر
-        </a>
-      </div>
-      <span class="sub">🔒 يحتاج صلاحية «إدارة السيرفر» · Only server admins can add it</span>
+    <div class="btnrow">
+      <a class="btn btn-primary btn-pulse" id="addBtn" href="#" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.075.075 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.029zM8.02 15.331c-1.182 0-2.157-1.086-2.157-2.42 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.974 0c-1.18 0-2.157-1.086-2.157-2.42 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z"/></svg>
+        أضف إلى ديسكورد
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.87 10.91.58.1.78-.25.78-.55v-1.94c-3.2.7-3.87-1.37-3.87-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.04-.71.08-.69.08-.69 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.16 1.18a10.93 10.93 0 0 1 5.74 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.15v3.18c0 .31.21.66.79.55C20.22 21.38 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
     </div>
+    <span class="sub">يحتاج صلاحية «إدارة السيرفر» — only server admins can add it</span>
   </section>
 
+  <!-- ─── FEATURES ─── -->
+  <div class="head"><h2>وش يسوي؟</h2><p>What it does — كل شي داخل سيرفرك</p></div>
   <section class="grid">
-    <div class="card"><div class="ico">💬</div><h3>غرفة دردشة ذكية</h3><p>حدّد قناة بأمر /setchannel، وأي رسالة فيها يرد عليها البوت تلقائياً مع تذكّر سياق المحادثة.</p></div>
-    <div class="card"><div class="ico">🔀</div><h3>بدّل النموذج</h3><p>اختر GPT أو Gemini أو Claude بأمر /model حسب ما يناسبك — من نفس البوت.</p></div>
-    <div class="card"><div class="ico">🎨</div><h3>توليد الصور</h3><p>أمر /imagine يولّد صورة من وصفك عبر DALL·E أو Imagen.</p></div>
-    <div class="card"><div class="ico">🌙</div><h3>عربي أولاً</h3><p>يكتشف لغتك ويرد بنفسها — عربية فصحى بلهجة خليجية ودّية أو إنجليزية.</p></div>
+    <div class="card">
+      <div class="ico b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg></div>
+      <h3>غرفة دردشة ذكية</h3>
+      <p>حدّد قناة بأمر <code style="color:#aab4ff">/setchannel</code> وأي رسالة فيها يرد عليها البوت تلقائياً مع تذكّر سياق المحادثة.</p>
+    </div>
+    <div class="card">
+      <div class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></div>
+      <h3>بدّل النموذج</h3>
+      <p>اختر GPT أو Gemini أو Claude بأمر <code style="color:var(--gold)">/model</code> حسب ما يناسبك — من نفس البوت.</p>
+    </div>
+    <div class="card">
+      <div class="ico p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+      <h3>توليد الصور</h3>
+      <p>أمر <code style="color:#b794f6">/imagine</code> يولّد صورة من وصفك عبر DALL·E أو Imagen في ثوانٍ.</p>
+    </div>
+    <div class="card">
+      <div class="ico r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></div>
+      <h3>عربي أولاً</h3>
+      <p>يكتشف لغتك ويرد بنفسها — عربية فصحى بلهجة خليجية ودّية، أو إنجليزية.</p>
+    </div>
   </section>
 
+  <!-- ─── STEPS ─── -->
+  <div class="head"><h2>كيف تضيفه؟</h2><p>How to add — ثلاث خطوات</p></div>
   <section class="steps">
-    <h2>كيف تضيفه؟ · How to add</h2>
     <div class="step"><div class="n">1</div><div class="t"><b>اضغط «أضف إلى ديسكورد»</b><span>اختر السيرفر اللي تبي تضيف البوت فيه ووافق على الصلاحيات.</span></div></div>
     <div class="step"><div class="n">2</div><div class="t"><b>افتح قناة واكتب <code>/setchannel</code></b><span>تصير القناة غرفة ذكاء اصطناعي — اكتب أي رسالة وراح يرد.</span></div></div>
     <div class="step"><div class="n">3</div><div class="t"><b>جرّب <code>/ask</code> و <code>/imagine</code></b><span>اسأل أي سؤال أو ولّد صورة من أي مكان في السيرفر.</span></div></div>
   </section>
 
+  <!-- ─── CTA ─── -->
+  <section class="cta-box">
+    <h2>أضف البوت لسيرفرك الحين</h2>
+    <p>مجاني · يدعم GPT و Gemini و Claude · يتكلم عربي</p>
+    <div class="btnrow">
+      <a class="btn btn-primary" id="addBtn2" href="#" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.075.075 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.029zM8.02 15.331c-1.182 0-2.157-1.086-2.157-2.42 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.974 0c-1.18 0-2.157-1.086-2.157-2.42 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z"/></svg>
+        أضف إلى ديسكورد
+      </a>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
   <footer>
-    صُنع بـ ❤️ للمستخدم العربي · Built for Arabic users<br>
-    <a href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">GitHub</a><br>
+    <div class="footer-family">
+      <a href="https://github.com/khaledq84ever/discord-ai-bot" title="AI Chat Bot"><img src="/logo-ai.png" alt="AI Bot"></a>
+      <a href="https://github.com/khaledq84ever/discord-music-bot" title="Music Bot"><img src="/logo-music.png" alt="Music Bot" style="opacity:.55"></a>
+      <a href="https://github.com/khaledq84ever/discord-backup-bot" title="BackUp Bot"><img src="/logo-backup.png" alt="BackUp Bot" style="opacity:.55"></a>
+    </div>
+    <div>AI Bot — ذكاء اصطناعي لسيرفر ديسكورد · <a href="https://github.com/khaledq84ever/discord-ai-bot">GitHub</a></div>
+    <br>
     <a class="credit" href="https://x.com/KhaledQ84Ever" target="_blank" rel="noopener">
-      <svg viewBox="0 0 24 24"><path d="M18.9 1.2h3.7l-8 9.1L24 22.8h-7.4l-5.8-7.6-6.6 7.6H.5l8.6-9.8L0 1.2h7.6l5.2 6.9 6.1-6.9Zm-1.3 19.4h2L6.5 3.3H4.3l13.3 17.3Z"/></svg>
-      Programmed By: <b>@KhaledQ84Ever</b>
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Programmed By <b>@KhaledQ84Ever</b>
     </a>
   </footer>
 </div>
 
 <script>
-  // 👇 ضع Application ID مالك من Discord Developer Portal هنا (ليس سراً).
-  //    Put YOUR bot's Application ID here (from the Developer Portal → General).
+  // Application ID من Discord Developer Portal (ليس سراً).
   const CLIENT_ID = "1509039897577656400";
-
-  // الصلاحيات: عرض القنوات + إرسال + قراءة السجل + روابط + ملفات
-  const PERMISSIONS = "117824";
+  const PERMISSIONS = "117824";  // View+Send+History+Links+Files
   const invite = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}`
     + `&permissions=${PERMISSIONS}&scope=bot%20applications.commands`;
-
-  const btn = document.getElementById("addBtn");
-  btn.href = invite;
-  btn.addEventListener("click", (e) => {
-    if (CLIENT_ID === "YOUR_APPLICATION_ID") {
-      e.preventDefault();
-      alert("⚠️ افتح web/index.html وضع Application ID في CLIENT_ID.\nالسطر موجود في الأسفل.");
-    } else {
-      window.open(invite, "_blank", "noopener");
-      e.preventDefault();
-    }
+  document.querySelectorAll('#addBtn,#addBtn2').forEach(btn=>{
+    btn.href = invite;
+    btn.addEventListener("click",(e)=>{
+      if(!CLIENT_ID){ e.preventDefault(); alert("⚠️ افتح web/index.html وضع Application ID في CLIENT_ID."); }
+    });
   });
 </script>
 </body>
