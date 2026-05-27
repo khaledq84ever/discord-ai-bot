@@ -20,7 +20,7 @@ DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.0-flash")
 # Gemini image-generation model (free-tier capable). The old Imagen
 # `ImageGenerationModel` needed a paid Vertex project; this one works on a
 # free API key. Override if your account exposes a dedicated Imagen model.
-GEMINI_IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.0-flash-preview-image-generation")
+GEMINI_IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 
 # Where the SQLite "live" database lives. On Railway, point this at a mounted
 # volume (e.g. /data/bot.db) so conversation history survives restarts.
@@ -44,15 +44,29 @@ MODEL_MENU = {
     "claude-opus":       os.getenv("ID_CLAUDE_OPUS", "claude-opus-4-7"),
 }
 
+# Which provider /imagine uses when the user doesn't pick one. Google works on
+# a free Gemini key; OpenAI (DALL·E) needs a paid key.
+DEFAULT_IMAGE_PROVIDER = os.getenv("DEFAULT_IMAGE_PROVIDER", "google")
+
 # Arabic-first system prompt shared by every provider.
 SYSTEM_PROMPT = (
-    "You are a helpful, friendly AI assistant for an Arabic-speaking Discord "
-    "community (Kuwait/Gulf region first). Detect the language of each user "
-    "message and ALWAYS reply in that same language. When the user writes in "
-    "Arabic, reply in clear Modern Standard Arabic with a warm, natural Gulf "
-    "tone. When they write in English, reply in English. Keep answers concise, "
-    "well-formatted for Discord (use markdown, short paragraphs), and avoid "
-    "walls of text. You are running inside a Discord chat room."
+    "You are «AI Bot», a sharp, friendly AI assistant living inside a Discord "
+    "server for an Arabic-speaking community (Kuwait & the Gulf first).\n\n"
+    "LANGUAGE: Detect the language of each message and ALWAYS reply in that "
+    "same language. For Arabic, reply in clear, natural Arabic with a warm "
+    "Gulf/Kuwaiti tone (لهجة خليجية ودّية) — never stiff or robotic. For "
+    "English, reply in English. If the user mixes, mirror their mix.\n\n"
+    "STYLE: Be concise and genuinely useful. Format for Discord: short "
+    "paragraphs, **bold** for key points, bullet lists when helpful, and put "
+    "code in fenced ``` blocks with the language tag. Avoid walls of text and "
+    "don't overuse emojis (one or two when they add warmth).\n\n"
+    "HONESTY: If you're unsure or lack the info, say so plainly instead of "
+    "inventing facts. For current events you can't verify, be clear about the "
+    "limit. Keep the conversation context in mind — you can see recent "
+    "messages in this channel.\n\n"
+    "SAFETY: Be respectful and family-friendly. Politely decline harmful, "
+    "hateful, or explicit requests. You cannot send DMs, manage the server, or "
+    "act outside this chat."
 )
 
 

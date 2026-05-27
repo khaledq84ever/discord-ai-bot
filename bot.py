@@ -71,12 +71,48 @@ async def _auto_setup():
         log.warning("Could not set avatar (rate limit or perms): %s", e)
 
 
+WELCOME = (
+    "👋 **مرحباً! أنا بوت الذكاء الاصطناعي.**\n"
+    "للبدء، يكتب أحد المشرفين الأمر `/setchannel` في القناة اللي يبيها، "
+    "وبعدها أي رسالة فيها أرد عليها تلقائياً. أو استخدموا `/ask` و `/imagine` "
+    "من أي مكان. اكتبوا `/help` للأوامر كلها.\n\n"
+    "👋 **Hi! I'm your AI bot.** An admin runs `/setchannel` to turn a channel "
+    "into an AI room, then just type to chat. Or use `/ask` and `/imagine` "
+    "anywhere. Type `/help` for everything."
+)
+
+
+@bot.event
+async def on_guild_join(guild: discord.Guild):
+    """Post a friendly how-to the moment the bot is added to a server."""
+    channel = guild.system_channel
+    if channel is None or not channel.permissions_for(guild.me).send_messages:
+        channel = next(
+            (c for c in guild.text_channels
+             if c.permissions_for(guild.me).send_messages), None)
+    if channel is not None:
+        try:
+            await channel.send(WELCOME)
+        except discord.HTTPException:
+            pass
+    log.info("Joined guild '%s' (%d) — now in %d server(s).",
+             guild.name, guild.id, len(bot.guilds))
+
+
 @bot.event
 async def on_ready():
     memory.init()
     await _auto_setup()
+    # Global commands work in every server worldwide but can take up to an hour
+    # to propagate. Set DEV_GUILD_ID to also sync instantly to your test server.
+    dev_guild = os.getenv("DEV_GUILD_ID")
+    if dev_guild:
+        g = discord.Object(id=int(dev_guild))
+        tree.copy_global_to(guild=g)
+        await tree.sync(guild=g)
+        log.info("Synced commands instantly to dev guild %s", dev_guild)
     await tree.sync()
-    log.info("Logged in as %s — slash commands synced.", bot.user)
+    log.info("Logged in as %s — slash commands synced (global).", bot.user)
     log.info("In %d server(s). Invite: %s", len(bot.guilds), config.invite_url())
 
 
@@ -175,7 +211,7 @@ async def imagine(interaction: discord.Interaction, prompt: str,
         await interaction.response.send_message(
             "⏳ مهلاً قليلاً / slow down a sec.", ephemeral=True)
         return
-    prov = provider.value if provider else "openai"
+    prov = provider.value if provider else config.DEFAULT_IMAGE_PROVIDER
     await interaction.response.defer(thinking=True)
     try:
         data = await router.image(prov, prompt)

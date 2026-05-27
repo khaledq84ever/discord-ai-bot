@@ -55,17 +55,14 @@ async def chat(model_id: str, history: List[Dict[str, str]]) -> str:
 
 async def image(prompt: str) -> bytes:
     """Generate an image and return raw PNG/JPEG bytes (free-tier friendly)."""
-    from google.genai import types
-
     client = _get()
 
     def _gen():
+        # Image models (e.g. gemini-2.5-flash-image / "nano banana") return the
+        # image inline by default; forcing response_modalities suppresses it.
         resp = client.models.generate_content(
             model=_IMAGE_MODEL,
             contents=prompt,
-            config=types.GenerateContentConfig(
-                response_modalities=["TEXT", "IMAGE"],
-            ),
         )
         for cand in resp.candidates or []:
             content = getattr(cand, "content", None)

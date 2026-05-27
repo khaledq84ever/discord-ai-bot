@@ -121,6 +121,16 @@ railway up --detach                # deploy via Dockerfile
 - [x] Pushed to GitHub
 - [x] Landing page live on Vercel (public, admins-only add — enforced by Discord)
 - [x] One-click button wired with real Application ID
-- [ ] Enable MESSAGE CONTENT INTENT + copy bot token
-- [ ] Add `GOOGLE_API_KEY` (free Gemini) — run `test_gemini.py` to confirm
+- [x] Migrated to new `google-genai` SDK (old `google-generativeai` is dead)
+- [x] Gemini chat **verified live** (Arabic Gulf tone + English + code blocks)
+- [x] `/imagine` **verified live** — free-tier `gemini-2.5-flash-image` (nano-banana)
+- [x] Bot avatar generated (`assets/avatar.png`) + idempotent auto-upload on start
+- [x] Auto-welcome message on `on_guild_join`; global (worldwide) command sync
+- [ ] Enable MESSAGE CONTENT INTENT + copy bot token (needed for AI-room auto-replies)
 - [ ] Deploy bot to Railway (re-login first, add volume at `/data`)
+
+### Image model note
+Free Gemini keys generate images via `gemini-2.5-flash-image` through
+`generate_content` (NOT the old `ImageGenerationModel`, and do NOT pass
+`response_modalities` — that suppresses the image). Imagen models need `predict`
+(paid). `/imagine` defaults to Google (free); pass `provider:OpenAI` for DALL·E.
