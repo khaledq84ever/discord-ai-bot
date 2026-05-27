@@ -7,6 +7,9 @@
 *.db-shm
 bot.db
 
+# Vercel
+.vercel/
+
 # Python
 __pycache__/
 *.pyc
