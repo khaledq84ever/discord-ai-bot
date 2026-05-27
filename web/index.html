@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Bot — أضف بوت الذكاء الاصطناعي لسيرفرك</title>
+<meta name="description" content="بوت ذكاء اصطناعي لديسكورد: GPT و Gemini و Claude + توليد الصور. يتكلم عربي. أضفه بنقرة واحدة.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#e8001c; --navy:#0a0e27; --gold:#d4a843;
+    --blurple:#5865F2; --card:#141a3a; --line:#26305e; --muted:#9aa6d4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Tajawal','Inter',sans-serif; color:#fff; min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(88,101,242,.25), transparent 60%),
+      radial-gradient(900px 500px at 0% 10%, rgba(232,0,28,.18), transparent 55%),
+      var(--navy);
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+  .logo .dot{width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(135deg,var(--red),var(--gold));
+    display:grid;place-items:center;font-size:18px}
+  .badge{font-size:13px;color:var(--muted);border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px}
+
+  .hero{text-align:center;padding:56px 0 40px}
+  .hero h1{font-size:clamp(34px,6vw,60px);font-weight:800;line-height:1.15;
+    letter-spacing:-.5px}
+  .hero h1 .grad{background:linear-gradient(120deg,var(--gold),var(--red));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:clamp(16px,2.4vw,20px);
+    max-width:640px;margin:18px auto 0;line-height:1.7}
+
+  .cta{
+    display:inline-flex;align-items:center;gap:12px;margin-top:34px;
+    background:var(--blurple);color:#fff;border:none;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:19px;
+    padding:18px 34px;border-radius:16px;text-decoration:none;
+    box-shadow:0 14px 40px rgba(88,101,242,.45);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .cta:hover{transform:translateY(-3px);box-shadow:0 20px 52px rgba(88,101,242,.6)}
+  .cta:active{transform:translateY(-1px)}
+  .cta svg{width:26px;height:26px}
+  .sub{display:block;margin-top:14px;color:var(--muted);font-size:14px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;margin-top:56px}
+  .card{background:linear-gradient(180deg,var(--card),#0e1430);
+    border:1px solid var(--line);border-radius:18px;padding:24px;
+    transition:transform .15s ease,border-color .15s ease}
+  .card:hover{transform:translateY(-4px);border-color:var(--gold)}
+  .card .ico{font-size:26px;width:50px;height:50px;border-radius:12px;
+    background:rgba(255,255,255,.05);display:grid;place-items:center;margin-bottom:14px}
+  .card h3{font-size:18px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:14px;line-height:1.6}
+
+  .models{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:30px}
+  .pill{border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:9px 18px;border-radius:999px;font-weight:600;font-size:14px;color:#e9ecff}
+  .pill b{color:var(--gold)}
+
+  .steps{margin-top:64px;background:rgba(255,255,255,.02);
+    border:1px solid var(--line);border-radius:20px;padding:30px}
+  .steps h2{text-align:center;font-size:24px;margin-bottom:24px}
+  .step{display:flex;gap:16px;align-items:flex-start;padding:12px 0;
+    border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:none}
+  .step .n{flex:0 0 36px;height:36px;border-radius:50%;font-weight:800;
+    background:linear-gradient(135deg,var(--red),var(--gold));display:grid;place-items:center}
+  .step .t b{display:block;margin-bottom:3px}
+  .step .t span{color:var(--muted);font-size:14px}
+
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:50px;line-height:1.8}
+  footer a{color:var(--gold);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="dot">🤖</span> AI Bot</div>
+    <span class="badge">Arabic-first · يتكلم عربي</span>
+  </header>
+
+  <section class="hero">
+    <h1>بوت <span class="grad">ذكاء اصطناعي</span><br>لسيرفر الديسكورد</h1>
+    <p>تكلّم مع GPT و Gemini و Claude، وولّد الصور — كله داخل سيرفرك. يفهم العربية ويرد بالعربية. أضفه بنقرة واحدة.</p>
+
+    <div class="models">
+      <span class="pill">🟢 <b>GPT-4o</b></span>
+      <span class="pill">🔵 <b>Gemini</b></span>
+      <span class="pill">🟣 <b>Claude</b></span>
+      <span class="pill">🎨 <b>توليد صور</b></span>
+    </div>
+
+    <div>
+      <a class="cta" id="addBtn" href="#" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19 19 0 0 0 15.6 3l-.3.5a14 14 0 0 1 3.9 1.9 13 13 0 0 0-11.2 0A14 14 0 0 1 12 3.5L11.6 3A19 19 0 0 0 7 4.4 19.8 19.8 0 0 0 3.5 17a19 19 0 0 0 5.8 2.9l.6-1.3a12 12 0 0 1-2-1l.5-.4a13.4 13.4 0 0 0 11.4 0l.5.4c-.6.4-1.3.7-2 1l.6 1.3A19 19 0 0 0 24.5 17 19.8 19.8 0 0 0 20.3 4.4ZM9.7 14.3c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.7 2-1.7 2Zm5.6 0c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/></svg>
+        أضف إلى ديسكورد · Add to Discord
+      </a>
+      <span class="sub">مجاني · إعداد بنقرة واحدة · One-click setup</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card"><div class="ico">💬</div><h3>غرفة دردشة ذكية</h3><p>حدّد قناة بأمر /setchannel، وأي رسالة فيها يرد عليها البوت تلقائياً مع تذكّر سياق المحادثة.</p></div>
+    <div class="card"><div class="ico">🔀</div><h3>بدّل النموذج</h3><p>اختر GPT أو Gemini أو Claude بأمر /model حسب ما يناسبك — من نفس البوت.</p></div>
+    <div class="card"><div class="ico">🎨</div><h3>توليد الصور</h3><p>أمر /imagine يولّد صورة من وصفك عبر DALL·E أو Imagen.</p></div>
+    <div class="card"><div class="ico">🌙</div><h3>عربي أولاً</h3><p>يكتشف لغتك ويرد بنفسها — عربية فصحى بلهجة خليجية ودّية أو إنجليزية.</p></div>
+  </section>
+
+  <section class="steps">
+    <h2>كيف تضيفه؟ · How to add</h2>
+    <div class="step"><div class="n">1</div><div class="t"><b>اضغط «أضف إلى ديسكورد»</b><span>اختر السيرفر اللي تبي تضيف البوت فيه ووافق على الصلاحيات.</span></div></div>
+    <div class="step"><div class="n">2</div><div class="t"><b>افتح قناة واكتب <code>/setchannel</code></b><span>تصير القناة غرفة ذكاء اصطناعي — اكتب أي رسالة وراح يرد.</span></div></div>
+    <div class="step"><div class="n">3</div><div class="t"><b>جرّب <code>/ask</code> و <code>/imagine</code></b><span>اسأل أي سؤال أو ولّد صورة من أي مكان في السيرفر.</span></div></div>
+  </section>
+
+  <footer>
+    صُنع بـ ❤️ للمستخدم العربي · Built for Arabic users<br>
+    <a href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+</div>
+
+<script>
+  // 👇 ضع Application ID مالك من Discord Developer Portal هنا (ليس سراً).
+  //    Put YOUR bot's Application ID here (from the Developer Portal → General).
+  const CLIENT_ID = "YOUR_APPLICATION_ID";
+
+  // الصلاحيات: عرض القنوات + إرسال + قراءة السجل + روابط + ملفات
+  const PERMISSIONS = "117760";
+  const invite = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}`
+    + `&permissions=${PERMISSIONS}&scope=bot%20applications.commands`;
+
+  const btn = document.getElementById("addBtn");
+  btn.href = invite;
+  btn.addEventListener("click", (e) => {
+    if (CLIENT_ID === "YOUR_APPLICATION_ID") {
+      e.preventDefault();
+      alert("⚠️ افتح web/index.html وضع Application ID في CLIENT_ID.\nالسطر موجود في الأسفل.");
+    } else {
+      window.open(invite, "_blank", "noopener");
+      e.preventDefault();
+    }
+  });
+</script>
+</body>
+</html>
