@@ -272,11 +272,30 @@ async def help_cmd(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+# Colored dot per provider — matches the brand promo banners.
+_PROVIDER_DOT = {"openai": "🟢", "google": "🔵", "anthropic": "🟣"}
+
+HERO_PATH = os.path.join(os.path.dirname(__file__), "assets", "promo", "01-hero.png")
+
+
 @tree.command(name="info", description="معلومات البوت / About this bot")
 async def info_cmd(interaction: discord.Interaction):
-    """Public, pro-looking 'about' card — 5 icon fields so info is screenshot-ready."""
-    current = memory.get_model(interaction.guild_id) if interaction.guild_id else config.DEFAULT_MODEL
-    models = " · ".join(f"`{k}`" for k in config.MODEL_MENU)
+    """Public, pro-looking 'about' card — colored icons + branded banner,
+    so the info is screenshot-ready."""
+    current = (memory.get_model(interaction.guild_id)
+               if interaction.guild_id else config.DEFAULT_MODEL)
+
+    # Group models by provider, each line led by its colored dot. The active
+    # model is shown in bold.
+    by_provider: dict[str, list[str]] = {}
+    for key in config.MODEL_MENU:
+        prov = config.provider_for(key)
+        label = f"**{key}**" if key == current else f"`{key}`"
+        by_provider.setdefault(prov, []).append(label)
+    model_lines = "\n".join(
+        f"{_PROVIDER_DOT.get(prov, '⚪')} {' · '.join(items)}"
+        for prov, items in by_provider.items()
+    )
 
     embed = discord.Embed(
         title="🤖 AI Bot — المعلومات / Info",
@@ -289,36 +308,43 @@ async def info_cmd(interaction: discord.Interaction):
     if bot.user and bot.user.display_avatar:
         embed.set_thumbnail(url=bot.user.display_avatar.url)
 
-    # --- the 5 icons / fields ---
+    # --- the 5 colored-icon fields ---
     embed.add_field(
         name="🧠 النماذج / Models",
-        value=f"{models}\nالحالي / active: **{current}**",
+        value=f"{model_lines}\n— الحالي / active: **{current}**",
         inline=False,
     )
     embed.add_field(
         name="🎨 توليد الصور / Image gen",
-        value="`/imagine` — OpenAI DALL·E + Google Imagen",
+        value="🟡 `/imagine` — DALL·E + Google Imagen",
         inline=True,
     )
     embed.add_field(
         name="🌐 اللغات / Languages",
-        value="عربي + English (كشف تلقائي / auto-detect)",
+        value="🔴 عربي + English (كشف تلقائي / auto)",
         inline=True,
     )
     embed.add_field(
-        name="💻 الكود المصدري / Source",
-        value=f"[GitHub]({config.GITHUB_URL}) · مفتوح المصدر / open source",
+        name="💻 الكود / Source",
+        value=f"⚫ [GitHub]({config.GITHUB_URL}) · open source",
         inline=True,
     )
     embed.add_field(
         name="➕ أضف البوت / Add the bot",
-        value=f"[Invite]({config.invite_url()}) · [Website]({config.LANDING_URL})",
+        value=f"🔵 [Invite]({config.invite_url()}) · [Website]({config.LANDING_URL})",
         inline=True,
     )
 
-    embed.set_footer(text=f"في {len(bot.guilds)} سيرفر / in {len(bot.guilds)} servers · /help")
-    # Not ephemeral — public so it's easy to screenshot & share.
-    await interaction.response.send_message(embed=embed)
+    embed.set_footer(
+        text=f"في {len(bot.guilds)} سيرفر / in {len(bot.guilds)} servers · /help")
+
+    # Attach the branded hero banner as the embed image when it's available.
+    if os.path.exists(HERO_PATH):
+        file = discord.File(HERO_PATH, filename="hero.png")
+        embed.set_image(url="attachment://hero.png")
+        await interaction.response.send_message(embed=embed, file=file)
+    else:
+        await interaction.response.send_message(embed=embed)
 
 
 if __name__ == "__main__":

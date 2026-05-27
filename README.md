@@ -1,7 +1,14 @@
 # 🤖 Multi-Model AI Discord Bot (Arabic-first)
 
+![AI Bot](assets/promo/01-hero.png)
+
 دردشة ذكاء اصطناعي داخل ديسكورد مع GPT و Gemini و Claude + توليد الصور.
 Chat with GPT / Gemini / Claude inside Discord, plus image generation.
+
+| | |
+|---|---|
+| ![Models](assets/promo/02-models.png) | ![Image generation](assets/promo/03-imagine.png) |
+| ![Arabic-first](assets/promo/04-arabic.png) | ![Commands](assets/promo/05-commands.png) |
 
 ## Features / المميزات
 - **AI chat rooms** — mark a channel with `/setchannel`; the bot reads every
