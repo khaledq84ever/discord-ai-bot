@@ -7,8 +7,11 @@ Chat with GPT / Gemini / Claude inside Discord, plus image generation.
 - **AI chat rooms** — mark a channel with `/setchannel`; the bot reads every
   message in real time and replies with context (stored in a live SQLite DB).
 - **Switch models** with `/model` — GPT-4o, Gemini, Claude.
-- **Image generation** with `/imagine` (OpenAI DALL·E or Google Imagen).
+- **Image generation** with `/imagine` — free on a Gemini key
+  (`gemini-2.5-flash-image`), or OpenAI DALL·E if you have a paid key.
 - **Arabic-first**: detects language, replies in Arabic or English to match.
+
+**Live:** one-click add page → https://discordbot-khaledq8s-projects.vercel.app
 
 ## 1. Discord setup
 1. https://discord.com/developers/applications → **New Application**.
@@ -27,12 +30,12 @@ Chat with GPT / Gemini / Claude inside Discord, plus image generation.
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # fill in DISCORD_TOKEN + at least GOOGLE_API_KEY
-python bot.py
+python3 bot.py
 ```
 
 Test just the AI (no Discord needed):
 ```bash
-GOOGLE_API_KEY=your-free-key python test_gemini.py
+GOOGLE_API_KEY=your-free-key python3 test_gemini.py
 ```
 
 ## 4. Deploy on Railway
