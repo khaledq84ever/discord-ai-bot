@@ -11,7 +11,7 @@
 <meta property="og:image" content="avatar.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --red:#e8001c; --navy:#0a0e27; --gold:#d4a843;
@@ -35,25 +35,31 @@
     padding:6px 12px;border-radius:999px}
 
   .hero{text-align:center;padding:56px 0 40px}
-  .hero h1{font-size:clamp(34px,6vw,60px);font-weight:800;line-height:1.15;
-    letter-spacing:-.5px}
+  .hero h1{font-size:clamp(36px,6.4vw,64px);font-weight:900;line-height:1.12;
+    letter-spacing:-1px}
   .hero h1 .grad{background:linear-gradient(120deg,var(--gold),var(--red));
     -webkit-background-clip:text;background-clip:text;color:transparent}
   .hero p{color:var(--muted);font-size:clamp(16px,2.4vw,20px);
     max-width:640px;margin:18px auto 0;line-height:1.7}
 
+  .btnrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
   .cta{
-    display:inline-flex;align-items:center;gap:12px;margin-top:34px;
+    display:inline-flex;align-items:center;justify-content:center;gap:12px;
     background:var(--blurple);color:#fff;border:none;cursor:pointer;
-    font-family:inherit;font-weight:800;font-size:19px;
+    font-family:inherit;font-weight:900;font-size:19px;
     padding:18px 34px;border-radius:16px;text-decoration:none;
+    min-height:60px;
     box-shadow:0 14px 40px rgba(88,101,242,.45);
-    transition:transform .15s ease, box-shadow .15s ease;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
   }
   .cta:hover{transform:translateY(-3px);box-shadow:0 20px 52px rgba(88,101,242,.6)}
   .cta:active{transform:translateY(-1px)}
   .cta svg{width:26px;height:26px}
-  .sub{display:block;margin-top:14px;color:var(--muted);font-size:14px}
+  .cta.ghost{background:rgba(255,255,255,.04);color:#fff;
+    border:1px solid var(--line);box-shadow:none;font-weight:800}
+  .cta.ghost:hover{border-color:var(--gold);background:rgba(255,255,255,.07);
+    box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  .sub{display:block;margin-top:16px;color:var(--muted);font-size:14px}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:18px;margin-top:56px}
@@ -82,10 +88,35 @@
   .step .t b{display:block;margin-bottom:3px}
   .step .t span{color:var(--muted);font-size:14px}
 
-  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:50px;line-height:1.8}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:50px;line-height:1.9}
   footer a{color:var(--gold);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  /* pro author credit chip */
+  .credit{display:inline-flex;align-items:center;gap:9px;margin-top:18px;
+    padding:10px 18px;border-radius:999px;font-weight:800;font-size:14px;
+    color:#fff;text-decoration:none;
+    background:linear-gradient(135deg,rgba(29,155,240,.18),rgba(255,255,255,.04));
+    border:1px solid #1d9bf0;
+    box-shadow:0 8px 24px rgba(29,155,240,.25);
+    transition:transform .15s ease, box-shadow .15s ease}
+  .credit:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(29,155,240,.4)}
+  .credit svg{width:18px;height:18px;fill:#1d9bf0}
+  .credit b{color:#1d9bf0}
+
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
   @media (prefers-reduced-motion:reduce){.hero img{animation:none}}
+
+  /* phone optimization */
+  @media (max-width:560px){
+    .wrap{padding:20px 16px 56px}
+    .hero{padding:36px 0 28px}
+    .btnrow{flex-direction:column;align-items:stretch}
+    .cta{width:100%;font-size:18px;padding:17px 24px}
+    .grid{grid-template-columns:1fr;gap:14px;margin-top:40px}
+    .steps{padding:22px 18px}
+    .badge{display:none}
+  }
 </style>
 </head>
 <body>
@@ -111,10 +142,16 @@
     </div>
 
     <div>
-      <a class="cta" id="addBtn" href="#" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19 19 0 0 0 15.6 3l-.3.5a14 14 0 0 1 3.9 1.9 13 13 0 0 0-11.2 0A14 14 0 0 1 12 3.5L11.6 3A19 19 0 0 0 7 4.4 19.8 19.8 0 0 0 3.5 17a19 19 0 0 0 5.8 2.9l.6-1.3a12 12 0 0 1-2-1l.5-.4a13.4 13.4 0 0 0 11.4 0l.5.4c-.6.4-1.3.7-2 1l.6 1.3A19 19 0 0 0 24.5 17 19.8 19.8 0 0 0 20.3 4.4ZM9.7 14.3c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.7 2-1.7 2Zm5.6 0c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/></svg>
-        أضف إلى ديسكورد · Add to Discord
-      </a>
+      <div class="btnrow">
+        <a class="cta" id="addBtn" href="#" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19 19 0 0 0 15.6 3l-.3.5a14 14 0 0 1 3.9 1.9 13 13 0 0 0-11.2 0A14 14 0 0 1 12 3.5L11.6 3A19 19 0 0 0 7 4.4 19.8 19.8 0 0 0 3.5 17a19 19 0 0 0 5.8 2.9l.6-1.3a12 12 0 0 1-2-1l.5-.4a13.4 13.4 0 0 0 11.4 0l.5.4c-.6.4-1.3.7-2 1l.6 1.3A19 19 0 0 0 24.5 17 19.8 19.8 0 0 0 20.3 4.4ZM9.7 14.3c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.7 2-1.7 2Zm5.6 0c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/></svg>
+          أضف إلى ديسكورد · Add to Discord
+        </a>
+        <a class="cta ghost" href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 8.8 21.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.7.3-1.1.6-1.4-2.2-.3-4.5-1.1-4.5-5a4 4 0 0 1 1-2.7c-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7a4 4 0 0 1 1 2.7c0 3.9-2.3 4.7-4.5 5 .4.3.7.9.7 1.8v2.6c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>
+          GitHub · المصدر
+        </a>
+      </div>
       <span class="sub">🔒 يحتاج صلاحية «إدارة السيرفر» · Only server admins can add it</span>
     </div>
   </section>
@@ -135,7 +172,11 @@
 
   <footer>
     صُنع بـ ❤️ للمستخدم العربي · Built for Arabic users<br>
-    <a href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/khaledq84ever/discord-ai-bot" target="_blank" rel="noopener">GitHub</a><br>
+    <a class="credit" href="https://x.com/KhaledQ84Ever" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M18.9 1.2h3.7l-8 9.1L24 22.8h-7.4l-5.8-7.6-6.6 7.6H.5l8.6-9.8L0 1.2h7.6l5.2 6.9 6.1-6.9Zm-1.3 19.4h2L6.5 3.3H4.3l13.3 17.3Z"/></svg>
+      Programmed By: <b>@KhaledQ84Ever</b>
+    </a>
   </footer>
 </div>
 

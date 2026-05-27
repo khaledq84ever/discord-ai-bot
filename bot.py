@@ -262,13 +262,63 @@ async def help_cmd(interaction: discord.Interaction):
             "**/imagine** — ولّد صورة / generate an image\n"
             "**/setchannel** — فعّل غرفة الدردشة الذكية (مشرف) / enable AI room (admin)\n"
             "**/unsetchannel** — إيقاف الغرفة / disable AI room\n"
-            "**/reset** — امسح ذاكرة المحادثة / clear memory\n\n"
+            "**/reset** — امسح ذاكرة المحادثة / clear memory\n"
+            "**/info** — معلومات البوت / about this bot\n\n"
             "داخل غرفة الذكاء الاصطناعي، فقط اكتب رسالتك وسأرد تلقائياً.\n"
             "Inside an AI room, just type and I'll reply automatically."
         ),
         color=0xE8001C,
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+@tree.command(name="info", description="معلومات البوت / About this bot")
+async def info_cmd(interaction: discord.Interaction):
+    """Public, pro-looking 'about' card — 5 icon fields so info is screenshot-ready."""
+    current = memory.get_model(interaction.guild_id) if interaction.guild_id else config.DEFAULT_MODEL
+    models = " · ".join(f"`{k}`" for k in config.MODEL_MENU)
+
+    embed = discord.Embed(
+        title="🤖 AI Bot — المعلومات / Info",
+        description=(
+            "بوت ذكاء اصطناعي متعدد النماذج، عربي أولاً.\n"
+            "Multi-model AI assistant — Arabic-first, works in any server."
+        ),
+        color=0xE8001C,
+    )
+    if bot.user and bot.user.display_avatar:
+        embed.set_thumbnail(url=bot.user.display_avatar.url)
+
+    # --- the 5 icons / fields ---
+    embed.add_field(
+        name="🧠 النماذج / Models",
+        value=f"{models}\nالحالي / active: **{current}**",
+        inline=False,
+    )
+    embed.add_field(
+        name="🎨 توليد الصور / Image gen",
+        value="`/imagine` — OpenAI DALL·E + Google Imagen",
+        inline=True,
+    )
+    embed.add_field(
+        name="🌐 اللغات / Languages",
+        value="عربي + English (كشف تلقائي / auto-detect)",
+        inline=True,
+    )
+    embed.add_field(
+        name="💻 الكود المصدري / Source",
+        value=f"[GitHub]({config.GITHUB_URL}) · مفتوح المصدر / open source",
+        inline=True,
+    )
+    embed.add_field(
+        name="➕ أضف البوت / Add the bot",
+        value=f"[Invite]({config.invite_url()}) · [Website]({config.LANDING_URL})",
+        inline=True,
+    )
+
+    embed.set_footer(text=f"في {len(bot.guilds)} سيرفر / in {len(bot.guilds)} servers · /help")
+    # Not ephemeral — public so it's easy to screenshot & share.
+    await interaction.response.send_message(embed=embed)
 
 
 if __name__ == "__main__":

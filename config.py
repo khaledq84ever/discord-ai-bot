@@ -14,6 +14,10 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
+# Public links surfaced by the /info command.
+GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/khaledq84ever/discord-ai-bot")
+LANDING_URL = os.getenv("LANDING_URL", "https://discordbot-khaledq8s-projects.vercel.app")
+
 # Default model used by a server until /model changes it.
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.0-flash")
 
