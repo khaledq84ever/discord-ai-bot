@@ -22,7 +22,9 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("aibot")
 
 intents = discord.Intents.default()
-intents.message_content = True  # REQUIRED — enable in Developer Portal too.
+# Channel free-chat needs Message Content Intent (ON in Developer Portal).
+# Set env MESSAGE_CONTENT=0 to run slash-commands-only until that toggle is enabled.
+intents.message_content = os.getenv("MESSAGE_CONTENT", "1") == "1"
 
 bot = discord.Client(intents=intents)
 tree = app_commands.CommandTree(bot)
@@ -350,13 +352,7 @@ async def info_cmd(interaction: discord.Interaction):
 if __name__ == "__main__":
     if not config.DISCORD_TOKEN:
         raise SystemExit("DISCORD_TOKEN is not set — see .env.example")
-    try:
-        bot.run(config.DISCORD_TOKEN)
-    except discord.errors.PrivilegedIntentsRequired:
-        # Message Content Intent not enabled in the Developer Portal yet.
-        # Come online anyway — slash commands (/ask, /imagine, …) still work.
-        # Free-form channel chat resumes automatically once the intent is enabled.
-        log.warning("Message Content Intent OFF — starting in slash-command-only mode. "
-                    "Enable it in the Developer Portal to unlock channel chat.")
-        intents.message_content = False
-        bot.run(config.DISCORD_TOKEN)
+    if not intents.message_content:
+        log.warning("Running slash-command-only (MESSAGE_CONTENT=0). "
+                    "Enable Message Content Intent in the portal + set MESSAGE_CONTENT=1 for channel chat.")
+    bot.run(config.DISCORD_TOKEN)
