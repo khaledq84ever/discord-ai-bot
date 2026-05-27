@@ -38,9 +38,31 @@ def init() -> None:
             ts         REAL NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_msg_channel ON messages(channel_id, id);
+        CREATE TABLE IF NOT EXISTS meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT
+        );
         """
     )
     _conn.commit()
+
+
+# ---- generic key/value (bot-level flags, e.g. avatar hash) -----------------
+
+def get_meta(key: str) -> Optional[str]:
+    with _lock:
+        row = _conn.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
+    return row[0] if row else None
+
+
+def set_meta(key: str, value: str) -> None:
+    with _lock:
+        _conn.execute(
+            "INSERT INTO meta(key, value) VALUES(?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+        _conn.commit()
 
 
 # ---- guild model selection -------------------------------------------------

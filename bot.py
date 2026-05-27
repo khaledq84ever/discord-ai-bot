@@ -6,7 +6,9 @@ live SQLite DB, and replies using the server's selected model
 images.
 """
 import io
+import os
 import time
+import hashlib
 import logging
 
 import discord
@@ -44,11 +46,38 @@ async def _send_long(target, text: str):
         await target.send(text[i:i + 1990])
 
 
+AVATAR_PATH = os.path.join(os.path.dirname(__file__), "assets", "avatar.png")
+
+
+async def _auto_setup():
+    """One-time bot appearance setup: upload the avatar if it changed.
+
+    Idempotent — we store the avatar file's hash in the DB and only call
+    Discord again when the image actually changes, to avoid hitting the
+    strict avatar-edit rate limit on every restart.
+    """
+    if os.getenv("SET_AVATAR", "1") != "1" or not os.path.exists(AVATAR_PATH):
+        return
+    with open(AVATAR_PATH, "rb") as f:
+        data = f.read()
+    digest = hashlib.sha256(data).hexdigest()
+    if memory.get_meta("avatar_hash") == digest:
+        return
+    try:
+        await bot.user.edit(avatar=data)
+        memory.set_meta("avatar_hash", digest)
+        log.info("Bot avatar set from %s", AVATAR_PATH)
+    except discord.HTTPException as e:
+        log.warning("Could not set avatar (rate limit or perms): %s", e)
+
+
 @bot.event
 async def on_ready():
     memory.init()
+    await _auto_setup()
     await tree.sync()
     log.info("Logged in as %s — slash commands synced.", bot.user)
+    log.info("In %d server(s). Invite: %s", len(bot.guilds), config.invite_url())
 
 
 @bot.event
