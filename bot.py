@@ -350,4 +350,13 @@ async def info_cmd(interaction: discord.Interaction):
 if __name__ == "__main__":
     if not config.DISCORD_TOKEN:
         raise SystemExit("DISCORD_TOKEN is not set — see .env.example")
-    bot.run(config.DISCORD_TOKEN)
+    try:
+        bot.run(config.DISCORD_TOKEN)
+    except discord.errors.PrivilegedIntentsRequired:
+        # Message Content Intent not enabled in the Developer Portal yet.
+        # Come online anyway — slash commands (/ask, /imagine, …) still work.
+        # Free-form channel chat resumes automatically once the intent is enabled.
+        log.warning("Message Content Intent OFF — starting in slash-command-only mode. "
+                    "Enable it in the Developer Portal to unlock channel chat.")
+        intents.message_content = False
+        bot.run(config.DISCORD_TOKEN)
