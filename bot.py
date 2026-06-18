@@ -10,12 +10,14 @@ import os
 import time
 import hashlib
 import logging
+from datetime import datetime
 
 import discord
 from discord import app_commands
 
 import config
 import memory
+import steamrip
 from ai import router
 
 logging.basicConfig(level=logging.INFO)
@@ -265,7 +267,9 @@ async def help_cmd(interaction: discord.Interaction):
             "**/setchannel** — فعّل غرفة الدردشة الذكية (مشرف) / enable AI room (admin)\n"
             "**/unsetchannel** — إيقاف الغرفة / disable AI room\n"
             "**/reset** — امسح ذاكرة المحادثة / clear memory\n"
-            "**/info** — معلومات البوت / about this bot\n\n"
+            "**/info** — معلومات البوت / about this bot\n"
+            "**/steamrip** — أحدث ألعاب SteamRIP / latest SteamRIP games\n"
+            "**/steamrip-search** — ابحث في SteamRIP / search SteamRIP games\n\n"
             "داخل غرفة الذكاء الاصطناعي، فقط اكتب رسالتك وسأرد تلقائياً.\n"
             "Inside an AI room, just type and I'll reply automatically."
         ),
@@ -347,6 +351,98 @@ async def info_cmd(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed, file=file)
     else:
         await interaction.response.send_message(embed=embed)
+
+
+# --------------------------------------------------------------------------- #
+#  SteamRIP commands
+# --------------------------------------------------------------------------- #
+
+_STEAMRIP_COLOR = 0x1B2838  # Steam dark blue
+
+
+def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
+    embed = discord.Embed(
+        title=f"{index + 1}. {game['title']}",
+        color=_STEAMRIP_COLOR,
+    )
+    if game.get("genre"):
+        embed.add_field(name="🎮 Genre", value=game["genre"], inline=True)
+    if game.get("size") and game["size"] != "—":
+        embed.add_field(name="💾 Size", value=game["size"], inline=True)
+    if game.get("version"):
+        embed.add_field(name="📦 Version", value=game["version"], inline=False)
+    if game.get("upload_date"):
+        try:
+            dt = datetime.fromisoformat(game["upload_date"])
+            embed.add_field(name="📅 Added", value=dt.strftime("%Y-%m-%d"), inline=True)
+        except ValueError:
+            pass
+    if game.get("image_url"):
+        embed.set_thumbnail(url=game["image_url"])
+    dl = game.get("download_urls", [])
+    if dl:
+        links = "\n".join(f"• [{u.split('/')[2]}]({u})" if "//" in u else f"• {u}" for u in dl[:3])
+        embed.add_field(name="⬇️ Download", value=links, inline=False)
+        if len(dl) > 3:
+            embed.add_field(name="", value=f"*+{len(dl) - 3} more links*", inline=False)
+    return embed
+
+
+@tree.command(
+    name="steamrip",
+    description="أحدث ألعاب SteamRIP / Latest SteamRIP games",
+)
+@app_commands.describe(count="عدد الألعاب / number of games (1-10, default 5)")
+async def steamrip_latest(
+    interaction: discord.Interaction,
+    count: app_commands.Range[int, 1, 10] = 5,
+):
+    await interaction.response.defer(thinking=True)
+    try:
+        games = await steamrip.get_latest_games(limit=count)
+    except Exception as e:
+        await interaction.followup.send(f"⚠️ فشل في جلب الألعاب / Failed to fetch games:\n`{e}`")
+        return
+    if not games:
+        await interaction.followup.send("⚠️ لم يتم العثور على ألعاب / No games found.")
+        return
+    embeds = [_steamrip_embed(g, i) for i, g in enumerate(games)]
+    embed = embeds[0]
+    embed.description = f"أحدث {len(games)} ألعاب من **SteamRIP** / Latest from SteamRIP"
+    embed.set_footer(text=f"طلب من {interaction.user.display_name}")
+    await interaction.followup.send(embed=embed)
+    for e in embeds[1:]:
+        await interaction.channel.send(embed=e)
+
+
+@tree.command(
+    name="steamrip-search",
+    description="ابحث عن لعبة في SteamRIP / Search a game on SteamRIP",
+)
+@app_commands.describe(query="اسم اللعبة / game name")
+async def steamrip_search(interaction: discord.Interaction, query: str):
+    if len(query) < 2:
+        await interaction.response.send_message(
+            "⚠️ أدخل على الأقل حرفين / Enter at least 2 characters.", ephemeral=True)
+        return
+    await interaction.response.defer(thinking=True)
+    try:
+        games = await steamrip.search_games(query, limit=5)
+    except Exception as e:
+        await interaction.followup.send(f"⚠️ فشل في البحث / Search failed:\n`{e}`")
+        return
+    if not games:
+        await interaction.followup.send(
+            f"⚠️ لا توجد نتائج لـ \"{query}\" / No results for \"{query}\"."
+        )
+        return
+    embeds = [_steamrip_embed(g, i) for i, g in enumerate(games)]
+    embed = embeds[0]
+    embed.description = f"نتائج البحث عن \"{query}\" في **SteamRIP** / Search results"
+    embed.set_footer(text=f"طلب من {interaction.user.display_name}")
+    await interaction.followup.send(embed=embed)
+    for e in embeds[1:]:
+        await interaction.channel.send(embed=e)
 
 
 if __name__ == "__main__":
