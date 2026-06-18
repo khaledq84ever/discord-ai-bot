@@ -638,9 +638,7 @@ async def steamrip_auto(interaction: discord.Interaction):
                     g = games[0]
                     memory.mark_steamrip_posted(guild_id, g.get("title", ""))
                     embed = _steamrip_embed(g)
-                    embed.description = (
-                        f"🎮 لعبة جديدة من **SteamRIP** / New game from SteamRIP\n"
-                        f"— سيظهر غيرها بعد دقيقة / next one in 1 min")
+                    embed.description = None
                     await channel.send(embed=embed)
             except Exception as e:
                 log.warning("steamrip-auto error: %s", e)
