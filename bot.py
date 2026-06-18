@@ -508,8 +508,11 @@ def _strip_index(title: str) -> str:
 async def _steamrip_dedupe_channel(channel) -> set[str]:
     """Scan recent history, delete duplicate SteamRIP game posts (keeping one
     of each), and return the set of game titles (lowercased) still in the
-    channel — so we never re-post a game that's already visible there."""
+    channel — so we never re-post a game that's already visible there.
+    
+    Deletes are paced (max 5/loop with 1.5s delay) to avoid Discord rate limits."""
     seen: set[str] = set()
+    to_delete: list = []
     try:
         async for msg in channel.history(limit=200):
             if msg.author.id != bot.user.id or not msg.embeds:
@@ -520,12 +523,20 @@ async def _steamrip_dedupe_channel(channel) -> set[str]:
                 continue
             key = _strip_index(embed.title).strip().lower()
             if key in seen:
-                try:
-                    await msg.delete()  # duplicate — remove the extra
-                except (discord.Forbidden, discord.NotFound):
-                    pass
+                to_delete.append(msg)
             else:
                 seen.add(key)
+        # Delete duplicates slowly to avoid 429 rate limits
+        deleted = 0
+        for msg in to_delete:
+            if deleted >= 5:
+                break
+            try:
+                await msg.delete()
+                deleted += 1
+                await asyncio.sleep(1.5)
+            except (discord.Forbidden, discord.NotFound):
+                pass
     except discord.Forbidden:
         log.warning("steamrip dedupe: missing Read History permission")
     return seen

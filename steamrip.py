@@ -70,7 +70,7 @@ def _format_size(size_str: str) -> str:
 
 def _normalize(g: dict) -> dict:
     return {
-        "title": g.get("title", "Unknown"),
+        "title": _clean_title(g.get("title", "Unknown")),
         "version": g.get("version", ""),
         "size": _format_size(g.get("file_size", "")),
         "genre": g.get("genre", ""),
@@ -110,7 +110,7 @@ async def search_games(query: str, limit: int = 5) -> list[dict]:
         for g in matches:
             image_url = await search_steam_image(session, g.get("title", ""))
             out.append({
-                "title": g.get("title", "Unknown"),
+                "title": _clean_title(g.get("title", "Unknown")),
                 "version": g.get("version", ""),
                 "size": _format_size(g.get("file_size", "")),
                 "genre": g.get("genre", ""),
