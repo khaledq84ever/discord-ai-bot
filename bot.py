@@ -182,10 +182,23 @@ async def ask(interaction: discord.Interaction, prompt: str):
         await interaction.channel.send(c)
 
 
+def _detect_provider(api_key: str) -> str | None:
+    """Guess the provider from the key's prefix so users can just paste a key.
+    Order matters: Anthropic keys also start with 'sk-', so check it first."""
+    k = (api_key or "").strip()
+    if k.startswith("sk-ant-"):
+        return "anthropic"
+    if k.startswith("AIza"):
+        return "google"
+    if k.startswith("sk-") or k.startswith("sess-"):
+        return "openai"
+    return None
+
+
 @tree.command(name="model", description="غيّر النموذج أو المفتاح / Switch model or set your API key")
 @app_commands.describe(
     action="ماذا تريد أن تفعل؟ / what to do",
-    provider="اسم المزوّد / provider name (openai, google, anthropic)",
+    provider="اختياري — يُكتشف تلقائياً / optional — auto-detected from the key",
     api_key="مفتاح API الخاص بك / your API key (for setkey)",
 )
 @app_commands.choices(action=[
@@ -223,17 +236,26 @@ async def model(
         return
 
     if action.value == "setkey":
-        if not provider or not api_key:
+        if not api_key:
             await interaction.response.send_message(
-                "⚠️ استخدم: `/model setkey <provider> <api_key>`\n"
-                "مثال: `/model setkey openai sk-xxx...`\n"
-                "Example: `/model setkey google AIza...`",
+                "⚠️ الصق المفتاح فقط وسأكتشف المزوّد تلقائياً.\n"
+                "Just paste the key — I'll detect the provider.\n"
+                "مثال / Example: `/model setkey sk-ant-xxx...`",
                 ephemeral=True)
             return
-        memory.set_user_api_key(interaction.user.id, provider.value, api_key)
+        # Provider is optional — auto-detect from the key prefix if not given.
+        prov = provider.value if provider else _detect_provider(api_key)
+        if not prov:
+            await interaction.response.send_message(
+                "❓ لم أتعرّف على نوع المفتاح. اختر المزوّد يدوياً.\n"
+                "Couldn't detect the provider — pick it manually with the "
+                "`provider` option (openai / google / anthropic).",
+                ephemeral=True)
+            return
+        memory.set_user_api_key(interaction.user.id, prov, api_key.strip())
         await interaction.response.send_message(
-            f"🔑 تم حفظ مفتاح **{provider.value}** بنجاح! المفتاح مخفي ولن يراه أحد.\n"
-            f"**{provider.value}** API key saved! It's private to you.",
+            f"🔑 تم حفظ مفتاح **{prov}** تلقائياً! المفتاح مخفي ولن يراه أحد.\n"
+            f"**{prov}** API key saved (auto-detected)! It's private to you.",
             ephemeral=True)
         return
 
