@@ -467,10 +467,8 @@ def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
         embed.set_image(url=game["image_url"])
     dl = game.get("download_urls", [])
     if dl:
-        links = "\n".join(f"• [{u.split('/')[2]}]({u})" if "//" in u else f"• {u}" for u in dl[:3])
+        links = "\n".join(f"• [{u.split('/')[2]}]({u})" if "//" in u else f"• {u}" for u in dl)
         embed.add_field(name="⬇️ Download", value=links, inline=False)
-        if len(dl) > 3:
-            embed.add_field(name="", value=f"*+{len(dl) - 3} more links*", inline=False)
     return embed
 
 
