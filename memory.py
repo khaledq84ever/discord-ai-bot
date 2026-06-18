@@ -189,6 +189,12 @@ def init_steamrip() -> None:
             "  PRIMARY KEY (guild_id, title)"
             ")"
         )
+        _conn.execute(
+            "CREATE TABLE IF NOT EXISTS steamrip_auto ("
+            "  guild_id   INTEGER PRIMARY KEY,"
+            "  channel_id INTEGER NOT NULL"
+            ")"
+        )
         _conn.commit()
 
 
@@ -207,5 +213,35 @@ def mark_steamrip_posted(guild_id: int, title: str) -> None:
             "INSERT OR IGNORE INTO steamrip_posted(guild_id, title, posted_at) "
             "VALUES(?,?,?)",
             (guild_id, title, time.time()),
+        )
+        _conn.commit()
+
+
+# ---- SteamRIP auto-post persistence (survives bot restarts) ---------------
+
+def get_auto_channels() -> list[tuple[int, int]]:
+    """Return all (guild_id, channel_id) that had auto-post enabled."""
+    with _lock:
+        rows = _conn.execute(
+            "SELECT guild_id, channel_id FROM steamrip_auto"
+        ).fetchall()
+    return rows
+
+
+def save_auto_channel(guild_id: int, channel_id: int) -> None:
+    with _lock:
+        _conn.execute(
+            "INSERT OR REPLACE INTO steamrip_auto(guild_id, channel_id) "
+            "VALUES(?,?)",
+            (guild_id, channel_id),
+        )
+        _conn.commit()
+
+
+def remove_auto_channel(guild_id: int) -> None:
+    with _lock:
+        _conn.execute(
+            "DELETE FROM steamrip_auto WHERE guild_id=?",
+            (guild_id,),
         )
         _conn.commit()

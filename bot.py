@@ -109,6 +109,8 @@ async def on_ready():
     memory.init()
     memory.init_steamrip()
     await _auto_setup()
+    await _resume_steamrip_auto()
+    asyncio.create_task(_steamrip_watchdog())
     # Global commands work in every server worldwide but can take up to an hour
     # to propagate. Set DEV_GUILD_ID to also sync instantly to your test server.
     dev_guild = os.getenv("DEV_GUILD_ID")
@@ -444,6 +446,7 @@ async def info_cmd(interaction: discord.Interaction):
 
 _STEAMRIP_COLOR = 0x1B2838
 _steamrip_auto_jobs: dict[int, asyncio.Task] = {}
+_steamrip_last_post: dict[int, float] = {}  # guild_id -> timestamp of last post
 
 
 def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
@@ -602,34 +605,17 @@ async def steamrip_search(interaction: discord.Interaction, query: str):
         await interaction.channel.send(embed=e)
 
 
-@tree.command(
-    name="steamrip-auto",
-    description="شغّل بث ألعاب SteamRIP كل دقيقة / Auto-post new games every 1 min",
-)
-async def steamrip_auto(interaction: discord.Interaction):
-    guild_id = interaction.guild_id
+# ---- steamrip auto-post helpers (persistent + watchdog) -------------------
+
+async def _start_steamrip_auto(guild_id: int, channel, *, persist: bool = True) -> None:
+    """Create and store an auto-post loop for this guild/channel."""
     if guild_id in _steamrip_auto_jobs:
         _steamrip_auto_jobs[guild_id].cancel()
         del _steamrip_auto_jobs[guild_id]
-        await interaction.response.send_message(
-            "🛑 تم إيقاف البث التلقائي / Auto-post stopped.", ephemeral=True)
-        return
 
     async def _loop():
-        channel = interaction.channel
-        try:
-            await interaction.response.send_message(
-                "▶️ تم تشغيل البث التلقائي! سأنشر لعبة جديدة كل دقيقة وأحذف المكرّر.\n"
-                "▶️ Auto-post started! A new game every minute — I read the channel "
-                "first and delete duplicates so it stays clean.\n"
-                "`/steamrip-auto` مرة أخرى للإيقاف / run again to stop.",
-                ephemeral=True)
-        except:
-            pass
         while True:
             try:
-                # Read the channel first: delete duplicate posts and learn which
-                # games are already visible, so we never post the same game twice.
                 seen = await _steamrip_dedupe_channel(channel)
                 games = await _steamrip_fresh(guild_id, limit=1, skip_titles=seen)
                 if games:
@@ -638,12 +624,92 @@ async def steamrip_auto(interaction: discord.Interaction):
                     embed = _steamrip_embed(g)
                     embed.description = None
                     await channel.send(embed=embed)
+                    _steamrip_last_post[guild_id] = time.time()
             except Exception as e:
                 log.warning("steamrip-auto error: %s", e)
             await asyncio.sleep(60)
 
     task = asyncio.create_task(_loop())
     _steamrip_auto_jobs[guild_id] = task
+    if persist:
+        memory.save_auto_channel(guild_id, channel.id)
+
+
+def _stop_steamrip_auto(guild_id: int) -> None:
+    """Cancel the auto-post loop and remove from DB."""
+    task = _steamrip_auto_jobs.pop(guild_id, None)
+    if task:
+        task.cancel()
+    _steamrip_last_post.pop(guild_id, None)
+    memory.remove_auto_channel(guild_id)
+
+
+async def _steamrip_watchdog():
+    """Every 60s: restart any dead auto task, if it's been silent >3 min restart it."""
+    await bot.wait_until_ready()
+    while True:
+        await asyncio.sleep(60)
+        for guild_id, task in list(_steamrip_auto_jobs.items()):
+            if task.done():
+                log.warning("steamrip watchdog: task for guild %s died, restarting", guild_id)
+                rows = memory.get_auto_channels()
+                for gid, cid in rows:
+                    if gid == guild_id:
+                        channel = bot.get_channel(cid)
+                        if channel:
+                            await _start_steamrip_auto(guild_id, channel, persist=False)
+                        break
+        # Auto-restart if silent >3 min (task alive but stuck)
+        now = time.time()
+        for guild_id, last in list(_steamrip_last_post.items()):
+            if now - last > 180:
+                log.warning("steamrip watchdog: guild %s silent >3min, restarting", guild_id)
+                rows = memory.get_auto_channels()
+                for gid, cid in rows:
+                    if gid == guild_id:
+                        channel = bot.get_channel(cid)
+                        if channel:
+                            await _start_steamrip_auto(guild_id, channel, persist=False)
+                        break
+
+
+@tree.command(
+    name="steamrip-auto",
+    description="شغّل بث ألعاب SteamRIP كل دقيقة / Auto-post new games every 1 min",
+)
+async def steamrip_auto(interaction: discord.Interaction):
+    guild_id = interaction.guild_id
+    if guild_id in _steamrip_auto_jobs:
+        _stop_steamrip_auto(guild_id)
+        await interaction.response.send_message(
+            "🛑 تم إيقاف البث التلقائي / Auto-post stopped.", ephemeral=True)
+        return
+
+    await _start_steamrip_auto(guild_id, interaction.channel)
+    try:
+        await interaction.response.send_message(
+            "▶️ تم تشغيل البث التلقائي! سأنشر لعبة جديدة كل دقيقة وأحذف المكرّر.\n"
+            "▶️ Auto-post started! A new game every minute — I read the channel "
+            "first and delete duplicates so it stays clean.\n"
+            "`/steamrip-auto` مرة أخرى للإيقاف / run again to stop.",
+            ephemeral=True)
+    except:
+        pass
+
+
+# ---- resume auto-post on restart + start watchdog -------------------------
+
+async def _resume_steamrip_auto():
+    """On bot ready, restart auto-post for every guild that had it enabled."""
+    rows = memory.get_auto_channels()
+    for guild_id, channel_id in rows:
+        guild = bot.get_guild(guild_id)
+        if not guild:
+            continue
+        channel = guild.get_channel(channel_id)
+        if channel:
+            await _start_steamrip_auto(guild_id, channel, persist=False)
+            log.info("Resumed steamrip-auto in guild %s", guild_id)
 
 
 if __name__ == "__main__":
