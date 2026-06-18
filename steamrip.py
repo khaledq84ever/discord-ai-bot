@@ -68,25 +68,34 @@ def _format_size(size_str: str) -> str:
     return size
 
 
-async def get_latest_games(limit: int = 5) -> list[dict]:
-    """Fetch the latest `limit` games from SteamRIP with Steam images."""
+def _normalize(g: dict) -> dict:
+    return {
+        "title": g.get("title", "Unknown"),
+        "version": g.get("version", ""),
+        "size": _format_size(g.get("file_size", "")),
+        "genre": g.get("genre", ""),
+        "upload_date": g.get("upload_date", ""),
+        "image_url": None,
+        "download_urls": g.get("download_urls", []),
+    }
+
+
+async def list_all_games() -> list[dict]:
+    """Every game sorted newest-first, WITHOUT Steam images (cheap).
+    Use attach_images() to add images only for the few you actually show."""
     async with aiohttp.ClientSession(headers={"User-Agent": "discord-bot/1.0"}) as session:
         games = await fetch_games(session)
         games.sort(key=lambda g: g.get("upload_date", ""), reverse=True)
-        latest = games[:limit]
-        out = []
-        for g in latest:
-            image_url = await search_steam_image(session, g.get("title", ""))
-            out.append({
-                "title": g.get("title", "Unknown"),
-                "version": g.get("version", ""),
-                "size": _format_size(g.get("file_size", "")),
-                "genre": g.get("genre", ""),
-                "upload_date": g.get("upload_date", ""),
-                "image_url": image_url,
-                "download_urls": g.get("download_urls", []),
-            })
-        return out
+        return [_normalize(g) for g in games]
+
+
+async def attach_images(games: list[dict]) -> None:
+    """Fetch Steam header images for the given games, in place."""
+    if not games:
+        return
+    async with aiohttp.ClientSession(headers={"User-Agent": "discord-bot/1.0"}) as session:
+        for g in games:
+            g["image_url"] = await search_steam_image(session, g.get("title", ""))
 
 
 async def search_games(query: str, limit: int = 5) -> list[dict]:

@@ -475,8 +475,9 @@ def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
 
 
 async def _steamrip_fresh(guild_id: int, limit: int = 5) -> list[dict]:
-    """Fetch only games that haven't been posted in this guild yet."""
-    all_games = await steamrip.get_latest_games(limit=limit * 3)
+    """Unposted games from the FULL catalog (newest first), so every command
+    run yields new games until the whole catalog is exhausted."""
+    all_games = await steamrip.list_all_games()
     fresh = []
     for g in all_games:
         if len(fresh) >= limit:
@@ -484,6 +485,7 @@ async def _steamrip_fresh(guild_id: int, limit: int = 5) -> list[dict]:
         title = g.get("title", "")
         if title and not memory.is_steamrip_posted(guild_id, title):
             fresh.append(g)
+    await steamrip.attach_images(fresh)
     return fresh
 
 
