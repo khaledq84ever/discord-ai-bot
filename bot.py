@@ -464,7 +464,7 @@ def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
         except ValueError:
             pass
     if game.get("image_url"):
-        embed.set_thumbnail(url=game["image_url"])
+        embed.set_image(url=game["image_url"])
     dl = game.get("download_urls", [])
     if dl:
         links = "\n".join(f"• [{u.split('/')[2]}]({u})" if "//" in u else f"• {u}" for u in dl[:3])
@@ -474,19 +474,61 @@ def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
     return embed
 
 
-async def _steamrip_fresh(guild_id: int, limit: int = 5) -> list[dict]:
+async def _steamrip_fresh(
+    guild_id: int, limit: int = 5, skip_titles: set[str] | None = None,
+) -> list[dict]:
     """Unposted games from the FULL catalog (newest first), so every command
-    run yields new games until the whole catalog is exhausted."""
+    run yields new games until the whole catalog is exhausted.
+    `skip_titles` (lowercased) are also excluded — used to skip games already
+    visible in the channel, not just the ones in the posted-DB."""
+    skip = skip_titles or set()
     all_games = await steamrip.list_all_games()
     fresh = []
     for g in all_games:
         if len(fresh) >= limit:
             break
         title = g.get("title", "")
-        if title and not memory.is_steamrip_posted(guild_id, title):
-            fresh.append(g)
+        if not title:
+            continue
+        if memory.is_steamrip_posted(guild_id, title):
+            continue
+        if title.strip().lower() in skip:
+            continue
+        fresh.append(g)
     await steamrip.attach_images(fresh)
     return fresh
+
+
+def _strip_index(title: str) -> str:
+    """'1. Game Name' -> 'Game Name'. Embeds are titled with an ordinal prefix."""
+    head, sep, rest = title.partition(". ")
+    return rest if (sep and head.isdigit()) else title
+
+
+async def _steamrip_dedupe_channel(channel) -> set[str]:
+    """Scan recent history, delete duplicate SteamRIP game posts (keeping one
+    of each), and return the set of game titles (lowercased) still in the
+    channel — so we never re-post a game that's already visible there."""
+    seen: set[str] = set()
+    try:
+        async for msg in channel.history(limit=200):
+            if msg.author.id != bot.user.id or not msg.embeds:
+                continue
+            embed = msg.embeds[0]
+            color = embed.color.value if embed.color else None
+            if color != _STEAMRIP_COLOR or not embed.title:
+                continue
+            key = _strip_index(embed.title).strip().lower()
+            if key in seen:
+                try:
+                    await msg.delete()  # duplicate — remove the extra
+                except (discord.Forbidden, discord.NotFound):
+                    pass
+            else:
+                seen.add(key)
+    except discord.Forbidden:
+        log.warning("steamrip dedupe: missing Read History permission")
+    return seen
 
 
 @tree.command(
@@ -568,15 +610,19 @@ async def steamrip_auto(interaction: discord.Interaction):
         channel = interaction.channel
         try:
             await interaction.response.send_message(
-                "▶️ تم تشغيل البث التلقائي! سأنشر لعبة جديدة كل دقيقة.\n"
-                "▶️ Auto-post started! I'll post a new game every minute.\n"
+                "▶️ تم تشغيل البث التلقائي! سأنشر لعبة جديدة كل دقيقة وأحذف المكرّر.\n"
+                "▶️ Auto-post started! A new game every minute — I read the channel "
+                "first and delete duplicates so it stays clean.\n"
                 "`/steamrip-auto` مرة أخرى للإيقاف / run again to stop.",
                 ephemeral=True)
         except:
             pass
         while True:
             try:
-                games = await _steamrip_fresh(guild_id, limit=1)
+                # Read the channel first: delete duplicate posts and learn which
+                # games are already visible, so we never post the same game twice.
+                seen = await _steamrip_dedupe_channel(channel)
+                games = await _steamrip_fresh(guild_id, limit=1, skip_titles=seen)
                 if games:
                     g = games[0]
                     memory.mark_steamrip_posted(guild_id, g.get("title", ""))
