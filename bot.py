@@ -8,6 +8,7 @@ images.
 import io
 import os
 import time
+import asyncio
 import hashlib
 import logging
 from datetime import datetime
@@ -106,6 +107,7 @@ async def on_guild_join(guild: discord.Guild):
 @bot.event
 async def on_ready():
     memory.init()
+    memory.init_steamrip()
     await _auto_setup()
     # Global commands work in every server worldwide but can take up to an hour
     # to propagate. Set DEV_GUILD_ID to also sync instantly to your test server.
@@ -328,8 +330,9 @@ async def help_cmd(interaction: discord.Interaction):
             "**/unsetchannel** — إيقاف الغرفة / disable AI room\n"
             "**/reset** — امسح ذاكرة المحادثة / clear memory\n"
             "**/info** — معلومات البوت / about this bot\n"
-            "**/steamrip** — أحدث ألعاب SteamRIP / latest SteamRIP games\n"
-            "**/steamrip-search** — ابحث في SteamRIP / search SteamRIP games\n\n"
+            "**/steamrip** — أحدث ألعاب SteamRIP (جديد فقط) / latest new SteamRIP games\n"
+            "**/steamrip-search** — ابحث في SteamRIP / search SteamRIP games\n"
+            "**/steamrip-auto** — بث لعبة جديدة كل دقيقة / auto-post a new game every 1 min\n\n"
             "داخل غرفة الذكاء الاصطناعي، فقط اكتب رسالتك وسأرد تلقائياً.\n"
             "Inside an AI room, just type and I'll reply automatically."
         ),
@@ -414,10 +417,11 @@ async def info_cmd(interaction: discord.Interaction):
 
 
 # --------------------------------------------------------------------------- #
-#  SteamRIP commands
+#  SteamRIP commands — no duplicates, auto every 1 min
 # --------------------------------------------------------------------------- #
 
-_STEAMRIP_COLOR = 0x1B2838  # Steam dark blue
+_STEAMRIP_COLOR = 0x1B2838
+_steamrip_auto_jobs: dict[int, asyncio.Task] = {}
 
 
 def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
@@ -448,9 +452,22 @@ def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
     return embed
 
 
+async def _steamrip_fresh(guild_id: int, limit: int = 5) -> list[dict]:
+    """Fetch only games that haven't been posted in this guild yet."""
+    all_games = await steamrip.get_latest_games(limit=limit * 3)
+    fresh = []
+    for g in all_games:
+        if len(fresh) >= limit:
+            break
+        title = g.get("title", "")
+        if title and not memory.is_steamrip_posted(guild_id, title):
+            fresh.append(g)
+    return fresh
+
+
 @tree.command(
     name="steamrip",
-    description="أحدث ألعاب SteamRIP / Latest SteamRIP games",
+    description="أحدث ألعاب SteamRIP (جديد فقط) / Latest new SteamRIP games",
 )
 @app_commands.describe(count="عدد الألعاب / number of games (1-10, default 5)")
 async def steamrip_latest(
@@ -459,16 +476,21 @@ async def steamrip_latest(
 ):
     await interaction.response.defer(thinking=True)
     try:
-        games = await steamrip.get_latest_games(limit=count)
+        games = await _steamrip_fresh(interaction.guild_id, limit=count)
     except Exception as e:
         await interaction.followup.send(f"⚠️ فشل في جلب الألعاب / Failed to fetch games:\n`{e}`")
         return
     if not games:
-        await interaction.followup.send("⚠️ لم يتم العثور على ألعاب / No games found.")
+        await interaction.followup.send(
+            "✅ كل الألعاب الجديدة تم عرضها مسبقاً! كل الألعاب منشورة بالفعل.\n"
+            "✅ All new games have been shown already!"
+        )
         return
+    for g in games:
+        memory.mark_steamrip_posted(interaction.guild_id, g.get("title", ""))
     embeds = [_steamrip_embed(g, i) for i, g in enumerate(games)]
     embed = embeds[0]
-    embed.description = f"أحدث {len(games)} ألعاب من **SteamRIP** / Latest from SteamRIP"
+    embed.description = f"🎮 أحدث {len(games)} ألعاب من **SteamRIP** / Latest from SteamRIP"
     embed.set_footer(text=f"طلب من {interaction.user.display_name}")
     await interaction.followup.send(embed=embed)
     for e in embeds[1:]:
@@ -503,6 +525,48 @@ async def steamrip_search(interaction: discord.Interaction, query: str):
     await interaction.followup.send(embed=embed)
     for e in embeds[1:]:
         await interaction.channel.send(embed=e)
+
+
+@tree.command(
+    name="steamrip-auto",
+    description="شغّل بث ألعاب SteamRIP كل دقيقة / Auto-post new games every 1 min",
+)
+async def steamrip_auto(interaction: discord.Interaction):
+    guild_id = interaction.guild_id
+    if guild_id in _steamrip_auto_jobs:
+        _steamrip_auto_jobs[guild_id].cancel()
+        del _steamrip_auto_jobs[guild_id]
+        await interaction.response.send_message(
+            "🛑 تم إيقاف البث التلقائي / Auto-post stopped.", ephemeral=True)
+        return
+
+    async def _loop():
+        channel = interaction.channel
+        try:
+            await interaction.response.send_message(
+                "▶️ تم تشغيل البث التلقائي! سأنشر لعبة جديدة كل دقيقة.\n"
+                "▶️ Auto-post started! I'll post a new game every minute.\n"
+                "`/steamrip-auto` مرة أخرى للإيقاف / run again to stop.",
+                ephemeral=True)
+        except:
+            pass
+        while True:
+            try:
+                games = await _steamrip_fresh(guild_id, limit=1)
+                if games:
+                    g = games[0]
+                    memory.mark_steamrip_posted(guild_id, g.get("title", ""))
+                    embed = _steamrip_embed(g)
+                    embed.description = (
+                        f"🎮 لعبة جديدة من **SteamRIP** / New game from SteamRIP\n"
+                        f"— سيظهر غيرها بعد دقيقة / next one in 1 min")
+                    await channel.send(embed=embed)
+            except Exception as e:
+                log.warning("steamrip-auto error: %s", e)
+            await asyncio.sleep(60)
+
+    task = asyncio.create_task(_loop())
+    _steamrip_auto_jobs[guild_id] = task
 
 
 if __name__ == "__main__":

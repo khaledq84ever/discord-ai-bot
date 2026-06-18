@@ -175,3 +175,37 @@ def remove_user_api_key(user_id: int, provider: str) -> None:
             (user_id, provider),
         )
         _conn.commit()
+
+
+# ---- SteamRIP posted game tracking ---------------------------------------
+
+def init_steamrip() -> None:
+    with _lock:
+        _conn.execute(
+            "CREATE TABLE IF NOT EXISTS steamrip_posted ("
+            "  guild_id INTEGER NOT NULL,"
+            "  title    TEXT NOT NULL,"
+            "  posted_at REAL NOT NULL,"
+            "  PRIMARY KEY (guild_id, title)"
+            ")"
+        )
+        _conn.commit()
+
+
+def is_steamrip_posted(guild_id: int, title: str) -> bool:
+    with _lock:
+        row = _conn.execute(
+            "SELECT 1 FROM steamrip_posted WHERE guild_id=? AND title=?",
+            (guild_id, title),
+        ).fetchone()
+    return row is not None
+
+
+def mark_steamrip_posted(guild_id: int, title: str) -> None:
+    with _lock:
+        _conn.execute(
+            "INSERT OR IGNORE INTO steamrip_posted(guild_id, title, posted_at) "
+            "VALUES(?,?,?)",
+            (guild_id, title, time.time()),
+        )
+        _conn.commit()
