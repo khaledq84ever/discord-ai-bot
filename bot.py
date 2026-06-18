@@ -451,7 +451,7 @@ _steamrip_last_post: dict[int, float] = {}  # guild_id -> timestamp of last post
 
 def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
     embed = discord.Embed(
-        title=f"{index + 1}. {game['title']}",
+        title=f"{index + 1}. ({game['title']})",
         color=_STEAMRIP_COLOR,
     )
     if game.get("genre"):
@@ -501,9 +501,13 @@ async def _steamrip_fresh(
 
 
 def _strip_index(title: str) -> str:
-    """'1. Game Name' -> 'Game Name'. Embeds are titled with an ordinal prefix."""
+    """'1. (Game Name)' -> 'Game Name'. Strip ordinal prefix and parentheses."""
     head, sep, rest = title.partition(". ")
-    return rest if (sep and head.isdigit()) else title
+    if sep and head.isdigit():
+        title = rest
+    if title.startswith("(") and title.endswith(")"):
+        title = title[1:-1]
+    return title
 
 
 async def _steamrip_dedupe_channel(channel) -> set[str]:

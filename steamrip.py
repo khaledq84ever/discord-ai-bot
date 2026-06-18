@@ -61,6 +61,24 @@ async def search_steam_image(session: aiohttp.ClientSession, title: str) -> Opti
     return None
 
 
+async def search_web_image(session: aiohttp.ClientSession, title: str) -> Optional[str]:
+    """Fallback: search DuckDuckGo for a game image (no API key needed)."""
+    query = f"{title} game"
+    url = "https://duckduckgo.com/i.js"
+    params = {"q": query, "o": "json"}
+    try:
+        async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status != 200:
+                return None
+            data = json.loads(await resp.text())
+            results = data.get("results", [])
+            if results:
+                return results[0].get("image")
+    except Exception:
+        log.warning("DDG image fallback failed for '%s'", title, exc_info=True)
+    return None
+
+
 def _format_size(size_str: str) -> str:
     size = size_str.strip()
     if size.lower().startswith("torrent") or not size:
@@ -90,12 +108,16 @@ async def list_all_games() -> list[dict]:
 
 
 async def attach_images(games: list[dict]) -> None:
-    """Fetch Steam header images for the given games, in place."""
+    """Fetch game header images for the given games, in place.
+    
+    Tries Steam search first, falls back to DuckDuckGo if no result."""
     if not games:
         return
     async with aiohttp.ClientSession(headers={"User-Agent": "discord-bot/1.0"}) as session:
         for g in games:
             g["image_url"] = await search_steam_image(session, g.get("title", ""))
+            if not g["image_url"]:
+                g["image_url"] = await search_web_image(session, g.get("title", ""))
 
 
 async def search_games(query: str, limit: int = 5) -> list[dict]:
@@ -108,9 +130,12 @@ async def search_games(query: str, limit: int = 5) -> list[dict]:
         matches = matches[:limit]
         out = []
         for g in matches:
+            title = _clean_title(g.get("title", "Unknown"))
             image_url = await search_steam_image(session, g.get("title", ""))
+            if not image_url:
+                image_url = await search_web_image(session, title)
             out.append({
-                "title": _clean_title(g.get("title", "Unknown")),
+                "title": title,
                 "version": g.get("version", ""),
                 "size": _format_size(g.get("file_size", "")),
                 "genre": g.get("genre", ""),
