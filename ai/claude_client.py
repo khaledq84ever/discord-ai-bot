@@ -1,25 +1,32 @@
 """Anthropic Claude provider (chat only — no image generation)."""
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import config
 
 _client = None
+_client_per_key: dict[str, any] = {}
 
 
-def _get():
-    global _client
-    if _client is None:
+def _get(api_key: Optional[str] = None):
+    key = api_key or config.ANTHROPIC_API_KEY
+    if not api_key:
+        global _client
+        if _client is None:
+            from anthropic import AsyncAnthropic
+            _client = AsyncAnthropic(api_key=key)
+        return _client
+    if key not in _client_per_key:
         from anthropic import AsyncAnthropic
-        _client = AsyncAnthropic(api_key=config.ANTHROPIC_API_KEY)
-    return _client
+        _client_per_key[key] = AsyncAnthropic(api_key=key)
+    return _client_per_key[key]
 
 
-async def chat(model_id: str, history: List[Dict[str, str]]) -> str:
-    # Anthropic takes the system prompt as a top-level arg, not a message.
+async def chat(model_id: str, history: List[Dict[str, str]],
+               api_key: Optional[str] = None) -> str:
     messages = [
         {"role": m["role"], "content": m["content"]} for m in history
     ]
-    resp = await _get().messages.create(
+    resp = await _get(api_key).messages.create(
         model=model_id,
         system=config.SYSTEM_PROMPT,
         max_tokens=1024,

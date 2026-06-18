@@ -6,30 +6,37 @@ generation uses a Gemini image-capable model so it works on a free API key
 (the old Imagen `ImageGenerationModel` required a paid/Vertex project).
 """
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import config
 
 _client = None
+_client_per_key: dict[str, any] = {}
 
 # Free-tier image-capable Gemini model. Override via env if your account
 # exposes a different one (e.g. an Imagen model on a paid project).
 _IMAGE_MODEL = config.GEMINI_IMAGE_MODEL
 
 
-def _get():
-    global _client
-    if _client is None:
+def _get(api_key: Optional[str] = None):
+    key = api_key or config.GOOGLE_API_KEY
+    if not api_key:
+        global _client
+        if _client is None:
+            from google import genai
+            _client = genai.Client(api_key=key)
+        return _client
+    if key not in _client_per_key:
         from google import genai
-        _client = genai.Client(api_key=config.GOOGLE_API_KEY)
-    return _client
+        _client_per_key[key] = genai.Client(api_key=key)
+    return _client_per_key[key]
 
 
-async def chat(model_id: str, history: List[Dict[str, str]]) -> str:
+async def chat(model_id: str, history: List[Dict[str, str]],
+               api_key: Optional[str] = None) -> str:
     from google.genai import types
 
-    client = _get()
-    # Gemini uses 'user'/'model' roles; the system prompt is a separate config.
+    client = _get(api_key)
     contents = []
     for m in history:
         role = "model" if m["role"] == "assistant" else "user"
@@ -53,13 +60,10 @@ async def chat(model_id: str, history: List[Dict[str, str]]) -> str:
     return text
 
 
-async def image(prompt: str) -> bytes:
-    """Generate an image and return raw PNG/JPEG bytes (free-tier friendly)."""
-    client = _get()
+async def image(prompt: str, api_key: Optional[str] = None) -> bytes:
+    client = _get(api_key)
 
     def _gen():
-        # Image models (e.g. gemini-2.5-flash-image / "nano banana") return the
-        # image inline by default; forcing response_modalities suppresses it.
         resp = client.models.generate_content(
             model=_IMAGE_MODEL,
             contents=prompt,

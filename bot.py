@@ -143,7 +143,7 @@ async def on_message(message: discord.Message):
 
     async with message.channel.typing():
         try:
-            reply = await router.chat(model_key, history)
+            reply = await router.chat(model_key, history, user_id=message.author.id)
         except router.ProviderError as e:
             await message.reply(
                 f"⚠️ تعذّر الاتصال بالذكاء الاصطناعي / AI request failed:\n`{e}`"
@@ -169,7 +169,7 @@ async def ask(interaction: discord.Interaction, prompt: str):
     model_key = memory.get_model(interaction.guild_id)
     history = [{"role": "user", "content": prompt}]
     try:
-        reply = await router.chat(model_key, history)
+        reply = await router.chat(model_key, history, user_id=interaction.user.id)
     except router.ProviderError as e:
         await interaction.followup.send(f"⚠️ {e}")
         return
@@ -180,26 +180,86 @@ async def ask(interaction: discord.Interaction, prompt: str):
         await interaction.channel.send(c)
 
 
-class ModelSelect(discord.ui.Select):
-    def __init__(self, guild_id: int):
-        self.guild_id = guild_id
+@tree.command(name="model", description="غيّر النموذج أو المفتاح / Switch model or set your API key")
+@app_commands.describe(
+    action="ماذا تريد أن تفعل؟ / what to do",
+    provider="اسم المزوّد / provider name (openai, google, anthropic)",
+    api_key="مفتاح API الخاص بك / your API key (for setkey)",
+)
+@app_commands.choices(action=[
+    app_commands.Choice(name="اختر النموذج / pick model", value="pick"),
+    app_commands.Choice(name="🔑 setkey — تعيين مفتاح API", value="setkey"),
+    app_commands.Choice(name="🗑️ rmkey — حذف مفتاح API", value="rmkey"),
+    app_commands.Choice(name="👀 mykeys — عرض مفاتيحي", value="mykeys"),
+])
+@app_commands.choices(provider=[
+    app_commands.Choice(name="OpenAI", value="openai"),
+    app_commands.Choice(name="Google (Gemini)", value="google"),
+    app_commands.Choice(name="Anthropic (Claude)", value="anthropic"),
+])
+async def model(
+    interaction: discord.Interaction,
+    action: app_commands.Choice[str],
+    provider: app_commands.Choice[str] = None,
+    api_key: str = None,
+):
+    if action.value == "pick":
+        current = memory.get_model(interaction.guild_id)
         options = [discord.SelectOption(label=k) for k in config.MODEL_MENU]
-        super().__init__(placeholder="اختر النموذج / pick a model", options=options)
+        select = discord.ui.Select(
+            placeholder="اختر النموذج / pick a model", options=options)
+        async def select_cb(interaction: discord.Interaction):
+            choice = select.values[0]
+            memory.set_model(interaction.guild_id, choice)
+            await interaction.response.edit_message(
+                content=f"✅ النموذج الحالي / active model: **{choice}**", view=None)
+        select.callback = select_cb
+        view = discord.ui.View()
+        view.add_item(select)
+        await interaction.response.send_message(
+            f"النموذج الحالي / current: **{current}**", view=view, ephemeral=True)
+        return
 
-    async def callback(self, interaction: discord.Interaction):
-        choice = self.values[0]
-        memory.set_model(self.guild_id, choice)
-        await interaction.response.edit_message(
-            content=f"✅ النموذج الحالي / active model: **{choice}**", view=None)
+    if action.value == "setkey":
+        if not provider or not api_key:
+            await interaction.response.send_message(
+                "⚠️ استخدم: `/model setkey <provider> <api_key>`\n"
+                "مثال: `/model setkey openai sk-xxx...`\n"
+                "Example: `/model setkey google AIza...`",
+                ephemeral=True)
+            return
+        memory.set_user_api_key(interaction.user.id, provider.value, api_key)
+        await interaction.response.send_message(
+            f"🔑 تم حفظ مفتاح **{provider.value}** بنجاح! المفتاح مخفي ولن يراه أحد.\n"
+            f"**{provider.value}** API key saved! It's private to you.",
+            ephemeral=True)
+        return
 
+    if action.value == "rmkey":
+        if not provider:
+            await interaction.response.send_message(
+                "⚠️ استخدم: `/model rmkey <provider>`\n"
+                "Example: `/model rmkey openai`",
+                ephemeral=True)
+            return
+        memory.remove_user_api_key(interaction.user.id, provider.value)
+        await interaction.response.send_message(
+            f"🗑️ تم حذف مفتاح **{provider.value}** / key removed.", ephemeral=True)
+        return
 
-@tree.command(name="model", description="غيّر نموذج الذكاء الاصطناعي / Switch the AI model")
-async def model(interaction: discord.Interaction):
-    current = memory.get_model(interaction.guild_id)
-    view = discord.ui.View()
-    view.add_item(ModelSelect(interaction.guild_id))
-    await interaction.response.send_message(
-        f"النموذج الحالي / current: **{current}**", view=view, ephemeral=True)
+    if action.value == "mykeys":
+        lines = []
+        for prov in ("openai", "google", "anthropic"):
+            key = memory.get_user_api_key(interaction.user.id, prov)
+            if key:
+                masked = key[:8] + "…" + key[-4:]
+                lines.append(f"🔑 **{prov}**: `{masked}`")
+            else:
+                lines.append(f"⚪ **{prov}**: غير مضبوط / not set")
+        await interaction.response.send_message(
+            "👤 **مفاتيح API الخاصة بك / Your API keys**\n" + "\n".join(lines),
+            ephemeral=True)
+        return
 
 
 @tree.command(name="imagine", description="ولّد صورة / Generate an image")
@@ -218,7 +278,7 @@ async def imagine(interaction: discord.Interaction, prompt: str,
     prov = provider.value if provider else config.DEFAULT_IMAGE_PROVIDER
     await interaction.response.defer(thinking=True)
     try:
-        data = await router.image(prov, prompt)
+        data = await router.image(prov, prompt, user_id=interaction.user.id)
     except router.ProviderError as e:
         await interaction.followup.send(f"⚠️ تعذّر توليد الصورة / image failed:\n`{e}`")
         return
@@ -262,7 +322,7 @@ async def help_cmd(interaction: discord.Interaction):
         title="🤖 AI Bot — مساعدة / Help",
         description=(
             "**/ask** — اسأل سؤالاً / ask a question\n"
-            "**/model** — غيّر النموذج (GPT/Gemini/Claude) / switch model\n"
+            "**/model** — غيّر النموذج أو المفتاح / switch model or set API key\n"
             "**/imagine** — ولّد صورة / generate an image\n"
             "**/setchannel** — فعّل غرفة الدردشة الذكية (مشرف) / enable AI room (admin)\n"
             "**/unsetchannel** — إيقاف الغرفة / disable AI room\n"

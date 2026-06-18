@@ -42,6 +42,12 @@ def init() -> None:
             key   TEXT PRIMARY KEY,
             value TEXT
         );
+        CREATE TABLE IF NOT EXISTS user_api_keys (
+            user_id    INTEGER NOT NULL,
+            provider   TEXT NOT NULL,   -- 'openai' / 'google' / 'anthropic'
+            api_key    TEXT NOT NULL,
+            PRIMARY KEY (user_id, provider)
+        );
         """
     )
     _conn.commit()
@@ -138,4 +144,34 @@ def get_history(channel_id: int, limit: int = None) -> List[Dict[str, str]]:
 def clear_history(channel_id: int) -> None:
     with _lock:
         _conn.execute("DELETE FROM messages WHERE channel_id=?", (channel_id,))
+        _conn.commit()
+
+
+# ---- per-user API keys ----------------------------------------------------
+
+def get_user_api_key(user_id: int, provider: str) -> Optional[str]:
+    with _lock:
+        row = _conn.execute(
+            "SELECT api_key FROM user_api_keys WHERE user_id=? AND provider=?",
+            (user_id, provider),
+        ).fetchone()
+    return row[0] if row else None
+
+
+def set_user_api_key(user_id: int, provider: str, api_key: str) -> None:
+    with _lock:
+        _conn.execute(
+            "INSERT INTO user_api_keys(user_id, provider, api_key) VALUES(?,?,?) "
+            "ON CONFLICT(user_id, provider) DO UPDATE SET api_key=excluded.api_key",
+            (user_id, provider, api_key),
+        )
+        _conn.commit()
+
+
+def remove_user_api_key(user_id: int, provider: str) -> None:
+    with _lock:
+        _conn.execute(
+            "DELETE FROM user_api_keys WHERE user_id=? AND provider=?",
+            (user_id, provider),
+        )
         _conn.commit()
