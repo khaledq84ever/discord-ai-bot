@@ -12,6 +12,7 @@ import config
 
 _client = None
 _client_per_key: dict[str, any] = {}
+_MAX_CACHED_CLIENTS = 200  # cap so distinct user-supplied keys can't grow this forever
 
 # Free-tier image-capable Gemini model. Override via env if your account
 # exposes a different one (e.g. an Imagen model on a paid project).
@@ -28,6 +29,8 @@ def _get(api_key: Optional[str] = None):
         return _client
     if key not in _client_per_key:
         from google import genai
+        if len(_client_per_key) >= _MAX_CACHED_CLIENTS:
+            _client_per_key.pop(next(iter(_client_per_key)))
         _client_per_key[key] = genai.Client(api_key=key)
     return _client_per_key[key]
 

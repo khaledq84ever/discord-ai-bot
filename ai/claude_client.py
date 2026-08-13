@@ -5,6 +5,7 @@ import config
 
 _client = None
 _client_per_key: dict[str, any] = {}
+_MAX_CACHED_CLIENTS = 200  # cap so distinct user-supplied keys can't grow this forever
 
 
 def _get(api_key: Optional[str] = None):
@@ -17,6 +18,8 @@ def _get(api_key: Optional[str] = None):
         return _client
     if key not in _client_per_key:
         from anthropic import AsyncAnthropic
+        if len(_client_per_key) >= _MAX_CACHED_CLIENTS:
+            _client_per_key.pop(next(iter(_client_per_key)))
         _client_per_key[key] = AsyncAnthropic(api_key=key)
     return _client_per_key[key]
 

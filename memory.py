@@ -4,15 +4,39 @@ This is the "real-time database" the bot reads from. Every message a user
 sends in an AI room is written here immediately and the recent rows are read
 back to give the model context. Survives restarts when DB_PATH is on a volume.
 """
+import base64
+import hashlib
 import sqlite3
 import threading
 import time
 from typing import List, Dict, Optional
 
+from cryptography.fernet import Fernet, InvalidToken
+
 import config
 
 _lock = threading.Lock()
 _conn: Optional[sqlite3.Connection] = None
+
+# User-submitted provider API keys are encrypted at rest so a leaked/stray
+# copy of the DB file doesn't hand out live, billable credentials. The
+# Fernet key is derived from the bot's own Discord token — no extra secret
+# to provision, and it's already the one credential only the bot owner has.
+_fernet = Fernet(base64.urlsafe_b64encode(
+    hashlib.sha256(config.DISCORD_TOKEN.encode()).digest()))
+
+
+def _encrypt(value: str) -> str:
+    return _fernet.encrypt(value.encode()).decode()
+
+
+def _decrypt(value: str) -> str:
+    """Decrypt a stored key. Falls back to returning it as-is for rows
+    written before encryption was added, then re-saves them encrypted."""
+    try:
+        return _fernet.decrypt(value.encode()).decode()
+    except InvalidToken:
+        return value
 
 
 def init() -> None:
@@ -155,7 +179,15 @@ def get_user_api_key(user_id: int, provider: str) -> Optional[str]:
             "SELECT api_key FROM user_api_keys WHERE user_id=? AND provider=?",
             (user_id, provider),
         ).fetchone()
-    return row[0] if row else None
+    if not row:
+        return None
+    stored = row[0]
+    key = _decrypt(stored)
+    if key == stored:
+        # Legacy plaintext row (pre-encryption) — migrate it now that we've
+        # confirmed we can read it.
+        set_user_api_key(user_id, provider, key)
+    return key
 
 
 def set_user_api_key(user_id: int, provider: str, api_key: str) -> None:
@@ -163,7 +195,7 @@ def set_user_api_key(user_id: int, provider: str, api_key: str) -> None:
         _conn.execute(
             "INSERT INTO user_api_keys(user_id, provider, api_key) VALUES(?,?,?) "
             "ON CONFLICT(user_id, provider) DO UPDATE SET api_key=excluded.api_key",
-            (user_id, provider, api_key),
+            (user_id, provider, _encrypt(api_key)),
         )
         _conn.commit()
 

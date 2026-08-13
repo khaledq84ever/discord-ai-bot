@@ -11,6 +11,7 @@ import time
 import asyncio
 import hashlib
 import logging
+import collections
 from datetime import datetime
 
 import discord
@@ -34,6 +35,11 @@ tree = app_commands.CommandTree(bot)
 
 # user_id -> last request timestamp (simple per-user cooldown)
 _cooldowns: dict[int, float] = {}
+
+# channel_id -> lock, so two messages landing in the same AI room within the
+# same cooldown window can't race: read history, both call the provider
+# concurrently, and write replies back out of order.
+_channel_locks: dict[int, asyncio.Lock] = collections.defaultdict(asyncio.Lock)
 
 
 def _rate_limited(user_id: int) -> bool:
@@ -138,24 +144,28 @@ async def on_message(message: discord.Message):
     if _rate_limited(message.author.id):
         return
 
-    # Store the user's message in the live DB (real-time history).
-    memory.add_message(message.channel.id, "user", content,
-                       author=message.author.display_name)
+    # Serialize per channel: two messages landing here close together must
+    # be stored/answered one at a time, or their history reads and provider
+    # calls race each other.
+    async with _channel_locks[message.channel.id]:
+        # Store the user's message in the live DB (real-time history).
+        memory.add_message(message.channel.id, "user", content,
+                           author=message.author.display_name)
 
-    model_key = memory.get_model(message.guild.id)
-    history = memory.get_history(message.channel.id)
+        model_key = memory.get_model(message.guild.id)
+        history = memory.get_history(message.channel.id)
 
-    async with message.channel.typing():
-        try:
-            reply = await router.chat(model_key, history, user_id=message.author.id)
-        except router.ProviderError as e:
-            await message.reply(
-                f"⚠️ تعذّر الاتصال بالذكاء الاصطناعي / AI request failed:\n`{e}`"
-            )
-            return
+        async with message.channel.typing():
+            try:
+                reply = await router.chat(model_key, history, user_id=message.author.id)
+            except router.ProviderError as e:
+                await message.reply(
+                    f"⚠️ تعذّر الاتصال بالذكاء الاصطناعي / AI request failed:\n`{e}`"
+                )
+                return
 
-    memory.add_message(message.channel.id, "assistant", reply)
-    await _send_long(message.channel, reply)
+        memory.add_message(message.channel.id, "assistant", reply)
+        await _send_long(message.channel, reply)
 
 
 # --------------------------------------------------------------------------- #

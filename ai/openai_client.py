@@ -6,6 +6,7 @@ import config
 
 _client = None
 _client_per_key: dict[str, any] = {}
+_MAX_CACHED_CLIENTS = 200  # cap so distinct user-supplied keys can't grow this forever
 
 
 def _get(api_key: Optional[str] = None):
@@ -18,6 +19,8 @@ def _get(api_key: Optional[str] = None):
         return _client
     if key not in _client_per_key:
         from openai import AsyncOpenAI
+        if len(_client_per_key) >= _MAX_CACHED_CLIENTS:
+            _client_per_key.pop(next(iter(_client_per_key)))
         _client_per_key[key] = AsyncOpenAI(api_key=key)
     return _client_per_key[key]
 
@@ -30,7 +33,10 @@ async def chat(model_id: str, history: List[Dict[str, str]],
         messages=messages,
         temperature=0.7,
     )
-    return resp.choices[0].message.content.strip()
+    text = resp.choices[0].message.content
+    if not text:
+        raise RuntimeError("OpenAI returned an empty response.")
+    return text.strip()
 
 
 async def image(prompt: str, api_key: Optional[str] = None) -> bytes:
