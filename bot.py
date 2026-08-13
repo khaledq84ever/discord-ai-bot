@@ -456,7 +456,7 @@ async def info_cmd(interaction: discord.Interaction):
 
 _STEAMRIP_COLOR = 0x1B2838
 _steamrip_auto_jobs: dict[int, asyncio.Task] = {}
-_steamrip_last_post: dict[int, float] = {}  # guild_id -> timestamp of last post
+_steamrip_last_pass: dict[int, float] = {}  # guild_id -> timestamp of last successful loop pass
 
 
 def _steamrip_embed(game: dict, index: int = 0) -> discord.Embed:
@@ -638,7 +638,11 @@ async def _start_steamrip_auto(guild_id: int, channel, *, persist: bool = True) 
                     embed = _steamrip_embed(g)
                     embed.description = None
                     await channel.send(embed=embed)
-                    _steamrip_last_post[guild_id] = time.time()
+                # A pass with nothing new to post is a legitimate, healthy
+                # outcome (the catalog can be fully caught up) — track it the
+                # same as an actual post so the watchdog only flags genuine
+                # stalls (repeated exceptions), not "nothing new right now".
+                _steamrip_last_pass[guild_id] = time.time()
             except Exception as e:
                 log.warning("steamrip-auto error: %s", e)
             await asyncio.sleep(60)
@@ -654,12 +658,13 @@ def _stop_steamrip_auto(guild_id: int) -> None:
     task = _steamrip_auto_jobs.pop(guild_id, None)
     if task:
         task.cancel()
-    _steamrip_last_post.pop(guild_id, None)
+    _steamrip_last_pass.pop(guild_id, None)
     memory.remove_auto_channel(guild_id)
 
 
 async def _steamrip_watchdog():
-    """Every 60s: restart any dead auto task, if it's been silent >3 min restart it."""
+    """Every 60s: restart any dead auto task, or one whose loop has genuinely
+    stopped making passes (not just "no new games this pass") for >3 min."""
     await bot.wait_until_ready()
     while True:
         await asyncio.sleep(60)
@@ -673,11 +678,12 @@ async def _steamrip_watchdog():
                         if channel:
                             await _start_steamrip_auto(guild_id, channel, persist=False)
                         break
-        # Auto-restart if silent >3 min (task alive but stuck)
+        # Auto-restart if the loop hasn't completed a pass in >3 min (alive
+        # but genuinely stuck — e.g. wedged on a hung request).
         now = time.time()
-        for guild_id, last in list(_steamrip_last_post.items()):
+        for guild_id, last in list(_steamrip_last_pass.items()):
             if now - last > 180:
-                log.warning("steamrip watchdog: guild %s silent >3min, restarting", guild_id)
+                log.warning("steamrip watchdog: guild %s stalled >3min, restarting", guild_id)
                 rows = memory.get_auto_channels()
                 for gid, cid in rows:
                     if gid == guild_id:
