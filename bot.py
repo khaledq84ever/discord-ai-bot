@@ -35,6 +35,7 @@ tree = app_commands.CommandTree(bot)
 
 # user_id -> last request timestamp (simple per-user cooldown)
 _cooldowns: dict[int, float] = {}
+_MAX_COOLDOWN_ENTRIES = 5000  # opportunistic sweep keeps this bounded over long uptimes
 
 # channel_id -> lock, so two messages landing in the same AI room within the
 # same cooldown window can't race: read history, both call the provider
@@ -47,6 +48,14 @@ def _rate_limited(user_id: int) -> bool:
     last = _cooldowns.get(user_id, 0)
     if now - last < config.USER_COOLDOWN:
         return True
+    if len(_cooldowns) >= _MAX_COOLDOWN_ENTRIES:
+        # _cooldowns never shrinks on its own — every distinct user who's ever
+        # messaged stays in it forever. Sweep out expired entries once it gets
+        # big instead of growing unbounded across months of uptime.
+        cutoff = now - config.USER_COOLDOWN
+        for uid, ts in list(_cooldowns.items()):
+            if ts < cutoff:
+                del _cooldowns[uid]
     _cooldowns[user_id] = now
     return False
 
