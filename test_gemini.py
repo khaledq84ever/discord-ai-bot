@@ -15,7 +15,7 @@ async def main():
         print("   GOOGLE_API_KEY=your-free-key python test_gemini.py")
         return
 
-    print(f"Using model: gemini-2.0-flash (free tier)\n")
+    print(f"Using menu key: gemini-2.0-flash -> {config.MODEL_MENU['gemini-2.0-flash']} (free tier)\n")
 
     tests = [
         [{"role": "user", "content": "مرحبا! من انت وش تسوي؟"}],

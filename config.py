@@ -41,7 +41,11 @@ USER_COOLDOWN = float(os.getenv("USER_COOLDOWN", "3"))
 MODEL_MENU = {
     "gpt-4o":            os.getenv("ID_GPT4O", "gpt-4o"),
     "gpt-4o-mini":       os.getenv("ID_GPT4O_MINI", "gpt-4o-mini"),
-    "gemini-2.0-flash":  os.getenv("ID_GEMINI_FLASH", "gemini-2.0-flash"),
+    # "gemini-flash-latest" is Google's auto-updating alias — Google retired
+    # gemini-2.0-flash outright (404 NOT_FOUND as of 2026-08-14), so this entry
+    # now points at the alias instead of a pinned version to avoid going stale
+    # the same way again.
+    "gemini-2.0-flash":  os.getenv("ID_GEMINI_FLASH", "gemini-flash-latest"),
     "gemini-2.5-flash":  os.getenv("ID_GEMINI_25_FLASH", "gemini-2.5-flash"),
     "gemini-2.5-pro":    os.getenv("ID_GEMINI_PRO", "gemini-2.5-pro"),
     "claude-sonnet":     os.getenv("ID_CLAUDE_SONNET", "claude-sonnet-4-6"),
