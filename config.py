@@ -41,6 +41,7 @@ USER_COOLDOWN = float(os.getenv("USER_COOLDOWN", "3"))
 MODEL_MENU = {
     "gpt-4o":            os.getenv("ID_GPT4O", "gpt-4o"),
     "gpt-4o-mini":       os.getenv("ID_GPT4O_MINI", "gpt-4o-mini"),
+    "codex":             os.getenv("ID_CODEX", "gpt-5-codex"),
     # "gemini-flash-latest" is Google's auto-updating alias — Google retired
     # gemini-2.0-flash outright (404 NOT_FOUND as of 2026-08-14), so this entry
     # now points at the alias instead of a pinned version to avoid going stale
@@ -90,7 +91,7 @@ def invite_url() -> str:
 
 def provider_for(model_key: str) -> str:
     """Return which provider a friendly model key belongs to."""
-    if model_key.startswith("gpt"):
+    if model_key.startswith("gpt") or model_key.startswith("codex"):
         return "openai"
     if model_key.startswith("gemini"):
         return "google"
