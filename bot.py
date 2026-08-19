@@ -448,7 +448,7 @@ async def info_cmd(interaction: discord.Interaction):
     )
 
     embed.set_footer(
-        text=f"في {len(bot.guilds)} سيرفر / in {len(bot.guilds)} servers · /help")
+        text=f"في {len(bot.guilds)} سيرفر / in {len(bot.guilds)} servers · /help · Program By KhaledQ8")
 
     # Attach the branded hero banner as the embed image when it's available.
     if os.path.exists(HERO_PATH):
